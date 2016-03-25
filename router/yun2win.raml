@@ -1,0 +1,2845 @@
+#%RAML 0.8
+---
+title: Yun2win.com API
+version: "v1"
+baseUri: http://112.74.210.208:8080/{version} 
+
+securitySchemes:
+  - oauth_2_0:
+      description: |
+        此 API 使用 OAuth 2 。每个请求必须在 header 设置有效的 access_token。 
+      type: OAuth 2.0
+      describedBy:
+        headers:
+          Authorization:
+            description: |
+              用来设置有效的access_token. 值一般为：Bearer {access_token}
+            type: string
+      settings:
+        authorizationUri: http://112.74.210.208:8080/oauth/authorize
+        accessTokenUri: http://112.74.210.208:8080/oauth/token
+        authorizationGrants: [ code, token ]
+securedBy: [ oauth_2_0 ]
+mediaType: application/json
+resourceTypes:
+  - base:
+      get?:
+        headers:     
+          If-None-Match?:
+            description: |
+              如果你已经有最新版本的数据，If-None-Match确保您不会取回不需要的数据
+            type: string
+          On-Behalf-Of?:
+            description: |
+              为了管理员的利益，让企业管理员访问API。开通这个功能，请联系我们，并附上你的API Key。
+            type: string
+          Client-Sync-Time:
+            description: |
+              设置客户端的版本时间，可获得在这个时间之后有更新的数据。此多用于同步数据。
+            type: date
+        responses: 
+          200?: 
+            description: |
+                请求成功。
+          202?: 
+            description: |
+                请求被接受，但仍未全部完成。
+          302?: 
+            description: "请求的资源临时跳转到不同的网址上。"
+          304?: 
+            description: |
+                资源未更改. 
+          400: 
+            description: |
+                错误的请求。 服务器无法理解语法不正确的请求。
+          401: 
+            description: "未经授权。访问需要用户验证"
+          404: 
+            description: "无法找到. 服务端无法找到任何和请求网址相匹配的资源。"
+          429: 
+            description: "你的应用同时发送过多相同的请求。"
+          500: 
+            description: "由于服务器错误，无法返回数据。"
+      post?:
+        headers:
+          If-Match?:
+            description: |
+              If-Match 确保你的应用只更改最新版本的文件或文件夹
+            type: string
+          Content-MD5?:
+            description: 文件的 SHA1 hash 值
+            type: string
+        responses: 
+          201?: 
+            description: |
+                请求已完成。
+          403: 
+            description: |
+                禁止的. 服务器理解请求，但拒绝完成。
+          405: 
+            description: |
+                不允许的方法。
+          409: 
+            description: |
+                冲突. 资料状态冲突使得请求未能完成，经常发生在文件复制上。
+          429: 
+            description: "你的应用同时发送过多相同的请求。"
+      put?:
+        headers:
+          If-Match?:
+            description: |
+              If-Match 确保你的应用只更改最新版本的文件或文件夹
+            type: string
+        responses: 
+          200?: 
+            description: |
+                请求已完成。
+          429: 
+            description: "你的应用同时发送过多相同的请求。"
+      delete?:
+        headers: 
+          If-Match?:
+            description: |
+              If-Match 确保你的应用只更改最新版本的文件或文件夹
+            type: string
+        responses: 
+          204?: 
+            description: |
+              "无内容。服务器已处理请求，但不需要返回任何信息。"
+          404: 
+            description: "删除目标不存在."
+          412: 
+            description: |
+                未满足前提条件. 
+          429: 
+            description: "你的应用同时发送过多相同的请求。"
+            
+/users:
+  type: base 
+  description: |
+    应用的用户集
+  get:
+    description: |
+      获取本应用用户列表.
+    queryParameters:
+      filter_term:
+        description: |
+          用来筛选本应用用户的参数。可以是姓名或是邮箱。
+        type: string
+      limit:
+        description: 返回结果集的数量
+        type: integer
+        default: 100
+        maximum: 1000
+      offset:
+        description: 返回结果集的起点
+        type: integer
+        default: 0
+    responses:
+      200:
+        body:
+          example: |
+            {
+                "total_count": 1,
+                "entries": [
+                    { 
+                        "id": "181216415",
+                        "name": "张成文",
+                        "email": "chengwenZhang@y2w.com",
+                        "createdAt": "2012-05-03T21:39:11-07:00",
+                        "updatedAt": "2012-08-23T14:57:48-07:00",
+                        "role": "user",
+                        "status": "active",
+                        "jobTitle": "美容师",
+                        "phone": "18437626312",
+                        "isDelete": false,
+                        "address": "广东省深圳市罗湖区和平路云文大厦1039B",
+                        "avatarUrl": "https://api.yun2win.com/api/avatar/large/181216415"
+                    }
+                ]
+            }
+          schema: |
+            {
+            	"$schema": "http://json-schema.org/draft-03/schema",
+            	"type": "object" ,
+            	"properties": {
+            		"total_count": {
+            			"type": "integer"
+            		},
+            		"entries": [
+            			{
+            				"properties": { 
+            					"id": {
+            						"description": "用户唯一标识码",
+            						"type": "string"
+            					},
+            					"name": {
+            						"description": "用户姓名",
+            						"type": "string"
+            					},
+            					"email": {
+            						"description": "用户邮箱，也是登陆帐号",
+            						"type": "string"
+            					},
+                      "isDelete": {
+            						"description": "如果为true, 表示服务器已删除了此实体，同步时请在客户端也删除",
+            						"type": "string"
+            					},
+            					"createdAt": {
+            						"description": "创建时间",
+            						"type": "date"
+            					},
+            					"updatedAt": {
+            						"description": "修改时间",
+            						"type": "date"
+            					},
+            					"role": {
+            						"description": "用户角色",
+            						"enum": [ "admin", "coadmin", "user" ]
+            					},
+            					"status": {
+            						"description": "用户状态，有效(active)，封禁(inactive)",
+            						"enum": [ "active", "inactive" ]
+            					},
+            					"jobTitle": {
+            						"description": "工作职位",
+            						"type": "string"
+            					},
+            					"phone": {
+            						"description": "手机号码",
+            						"type": "string"
+            					},
+            					"address": {
+            						"description": "地址",
+            						"type": "string"
+            					},
+            					"avatarUrl": {
+            						"description": "用户头像的地址",
+            						"type": "string"
+            					}
+                    },
+                    "type": "object"
+                  }
+                ],
+                "type": "array"
+              }
+            }
+  post:
+    description: |
+      本应用新增用户
+    body:
+      schema: |
+        {
+          "$schema": "http://json-schema.org/draft-03/schema",
+          "type": "object" ,
+          "properties": {
+            "email": {
+              "description": "用户邮箱，也是登陆帐号",
+              "type": "string"
+            },
+            "name": {
+              "description": "用户姓名",
+              "type": "string"
+            },
+            "role": {
+              "description": "用户角色",
+              "type": [ "admin", "user" ]
+            }, 
+            "jobTitle": {
+              "description": "工作职位",
+              "type": "string"
+            },
+            "phone": {
+              "description": "手机号码",
+              "type": "string"
+            },
+            "address": {
+              "description": "地址",
+              "type": "string"
+            },
+            "status": {
+              "description": "用户状态，有效(active)，封禁(inactive)",
+              "type": [ "active", "inactive" ]
+            },
+            "avatarUrl": {
+              "description": "用户头像的地址",
+              "type": "string"
+            }
+          },
+          "required": [ "email", "name" ]
+        }
+    responses:
+      201:
+        body:
+          example: |
+            {
+                "id": "181216415",
+                "name": "张成文",
+                "email": "chengwenZhang@y2w.com",
+                "createdAt": "2012-05-03T21:39:11-07:00",
+                "updatedAt": "2012-08-23T14:57:48-07:00",
+                "role": "user",
+                "status": "active",
+                "jobTitle": "美容师",
+                "phone": "18437626312",
+                "address": "广东省深圳市罗湖区和平路云文大厦1039B",
+                "avatarUrl": "https://api.yun2win.com/api/avatar/large/181216415"
+            }
+          schema: |
+            {
+            	"$schema": "http://json-schema.org/draft-03/schema",
+            	"type": "object" ,
+            	"properties": {
+            		"id": {
+                  "description": "用户唯一标识码",
+                  "type": "string"
+                },
+                "name": {
+                  "description": "用户姓名",
+                  "type": "string"
+                },
+                "email": {
+                  "description": "用户邮箱，也是登陆帐号",
+                  "type": "string"
+                },
+                "createdAt": {
+                  "description": "创建时间",
+                  "type": "date"
+                },
+                "updatedAt": {
+                  "description": "修改时间",
+                  "type": "date"
+                },
+                "role": {
+                  "description": "用户角色",
+                  "enum": [ "admin", "coadmin", "user" ]
+                },
+                "status": {
+                  "description": "用户状态，有效(active)，封禁(inactive)",
+                  "enum": [ "active", "inactive" ]
+                },
+                "jobTitle": {
+                  "description": "工作职位",
+                  "type": "string"
+                },
+                "phone": {
+                  "description": "手机号码",
+                  "type": "string"
+                },
+                "address": {
+                  "description": "地址",
+                  "type": "string"
+                },
+                "avatarUrl": {
+                  "description": "用户头像的地址",
+                  "type": "string"
+                }
+            	}
+            }  
+  /register:
+    type: base
+    securedBy: []
+    description: |
+      注册新用户
+    post:
+      body:
+        schema: |
+          {
+            "$schema": "http://json-schema.org/draft-03/schema",
+            "type": "object" ,
+            "properties": {
+              "appKey": {
+                "description": "申请得到的AppKey, 未填写取服务器配置的值",
+                "type": "string"
+              },
+              "email": {
+                "description": "用户邮箱，也是登陆帐号",
+                "type": "string"
+              },
+              "name": {
+                "description": "用户姓名",
+                "type": "string"
+              },
+              "password": {
+                "description": "注册密码",
+                "type": "string"
+              },
+              "avatarUrl": {
+                "description": "用户头像的地址",
+                "type": "string"
+              }
+            },
+            "required": [ "email", "password" ]
+          }
+      responses:
+        201:
+          body:
+            example: |
+              {
+                  "id": "181216415",
+                  "name": "张成文",
+                  "email": "chengwenZhang@y2w.com",
+                  "createdAt": "2012-05-03T21:39:11-07:00",
+                  "updatedAt": "2012-08-23T14:57:48-07:00",
+                  "role": "user",
+                  "status": "active",
+                  "jobTitle": "美容师",
+                  "phone": "18437626312",
+                  "address": "广东省深圳市罗湖区和平路云文大厦1039B",
+                  "avatarUrl": "https://api.yun2win.com/api/avatar/large/181216415"
+              }
+            schema: |
+              {
+                "$schema": "http://json-schema.org/draft-03/schema",
+                "type": "object" ,
+                "properties": {
+                  "id": {
+                    "description": "用户唯一标识码",
+                    "type": "string"
+                  },
+                  "name": {
+                    "description": "用户姓名",
+                    "type": "string"
+                  },
+                  "email": {
+                    "description": "用户邮箱，也是登陆帐号",
+                    "type": "string"
+                  },
+                  "createdAt": {
+                    "description": "创建时间",
+                    "type": "date"
+                  },
+                  "updatedAt": {
+                    "description": "修改时间",
+                    "type": "date"
+                  },
+                  "role": {
+                    "description": "用户角色",
+                    "enum": [ "admin", "coadmin", "user" ]
+                  },
+                  "status": {
+                    "description": "用户状态，有效(active)，封禁(inactive)",
+                    "enum": [ "active", "inactive" ]
+                  },
+                  "jobTitle": {
+                    "description": "工作职位",
+                    "type": "string"
+                  },
+                  "phone": {
+                    "description": "手机号码",
+                    "type": "string"
+                  },
+                  "address": {
+                    "description": "地址",
+                    "type": "string"
+                  },
+                  "avatarUrl": {
+                    "description": "用户头像的地址",
+                    "type": "string"
+                  }
+                }
+              }  
+  /login:
+    type: base
+    securedBy: []
+    description: |
+      用户登录
+    post:
+      body:
+        schema: |
+          {
+            "$schema": "http://json-schema.org/draft-03/schema",
+            "type": "object" ,
+            "properties": {
+              "appKey": {
+                "description": "申请得到的AppKey, 未填写取服务器配置的值",
+                "type": "string"
+              },
+              "email": {
+                "description": "用户邮箱，也是登陆帐号",
+                "type": "string"
+              },
+              "password": {
+                "description": "注册密码",
+                "type": "string"
+              }
+            },
+            "required": [ "email", "password" ]
+          }
+      responses:
+        201:
+          body:
+            example: |
+              {
+                  "token": "FWwlksweo13213",
+                  "expires": 21600,
+                  "secret": "9164aeabe2eb96115842f38a7330f909==2016-1-28",  
+                  "key": "oYO9MiBu9hzvWWhM",
+                  "id": "181216415",
+                  "name": "张成文",
+                  "email": "chengwenZhang@y2w.com",
+                  "createdAt": "2012-05-03T21:39:11-07:00",
+                  "updatedAt": "2012-08-23T14:57:48-07:00",
+                  "role": "user",
+                  "status": "active",
+                  "jobTitle": "美容师",
+                  "phone": "18437626312",
+                  "isDelete": false,
+                  "address": "广东省深圳市罗湖区和平路云文大厦1039B",
+                  "avatarUrl": "https://api.yun2win.com/api/avatar/large/181216415"
+              }
+            schema: |
+              {
+                "$schema": "http://json-schema.org/draft-03/schema",
+                "type": "object" ,
+                "properties": {
+                  "token": {
+                    "description": "返回可访问的token值",
+                    "type": "string"
+                  },
+                  "expires": {
+                    "description": "token的有效期",
+                    "type": "int"
+                  },
+                  "secret":{
+                    "description": "用于连接Api平台的有期限密钥",
+                    "type": "string"
+                  },
+                  "key":{
+                    "description": "用于连接Api平台的AppKey",
+                    "type": "string"
+                  },
+                  "id": {
+                    "description": "用户唯一标识码",
+                    "type": "string"
+                  },
+                  "name": {
+                    "description": "用户姓名",
+                    "type": "string"
+                  },
+                  "email": {
+                    "description": "用户邮箱，也是登陆帐号",
+                    "type": "string"
+                  },
+                  "createdAt": {
+                    "description": "创建时间",
+                    "type": "date"
+                  },
+                  "updatedAt": {
+                    "description": "修改时间",
+                    "type": "date"
+                  },
+                  "role": {
+                    "description": "用户角色",
+                    "enum": [ "admin", "coadmin", "user" ]
+                  },
+                  "status": {
+                    "description": "用户状态，有效(active)，封禁(inactive)",
+                    "enum": [ "active", "inactive" ]
+                  },
+                  "jobTitle": {
+                    "description": "工作职位",
+                    "type": "string"
+                  },
+                  "phone": {
+                    "description": "手机号码",
+                    "type": "string"
+                  },
+                  "address": {
+                    "description": "地址",
+                    "type": "string"
+                  },
+                  "avatarUrl": {
+                    "description": "用户头像的地址",
+                    "type": "string"
+                  }
+                }
+              }  
+  /{userId}:
+    type: base 
+    uriParameters:
+      userId:
+        description: 用户唯一标识码。
+        type: string 
+    description: |
+      应用的某个用户
+    get:
+      description: |
+        获取此用户信息.
+      responses:
+        200:
+          body:
+            example: |
+              { 
+                  "id": "181216415",
+                  "name": "张成文",
+                  "email": "chengwenZhang@y2w.com",
+                  "createdAt": "2012-05-03T21:39:11-07:00",
+                  "updatedAt": "2012-08-23T14:57:48-07:00",
+                  "role": "user",
+                  "status": "active",
+                  "jobTitle": "美容师",
+                  "phone": "18437626312",
+                  "address": "广东省深圳市罗湖区和平路云文大厦1039B",
+                  "avatarUrl": "https://api.yun2win.com/api/avatar/large/181216415"
+              }
+            schema: |
+              {
+              	"$schema": "http://json-schema.org/draft-03/schema",
+              	"type": "object" ,
+              	"properties": {
+              		"id": {
+                    "description": "用户唯一标识码",
+                    "type": "string"
+                  },
+                  "name": {
+                    "description": "用户姓名",
+                    "type": "string"
+                  },
+                  "email": {
+                    "description": "用户邮箱，也是登陆帐号",
+                    "type": "string"
+                  },
+                  "createdAt": {
+                    "description": "创建时间",
+                    "type": "date"
+                  },
+                  "updatedAt": {
+                    "description": "修改时间",
+                    "type": "date"
+                  },
+                  "role": {
+                    "description": "用户角色",
+                    "enum": [ "admin", "coadmin", "user" ]
+                  },
+                  "status": {
+                    "description": "用户状态，有效(active)，封禁(inactive)",
+                    "enum": [ "active", "inactive" ]
+                  },
+                  "jobTitle": {
+                    "description": "工作职位",
+                    "type": "string"
+                  },
+                  "phone": {
+                    "description": "手机号码",
+                    "type": "string"
+                  },
+                  "address": {
+                    "description": "地址",
+                    "type": "string"
+                  },
+                  "avatarUrl": {
+                    "description": "用户头像的地址",
+                    "type": "string"
+                  }
+              	}
+              } 
+    put:
+      description: |
+        更新用户信息.
+      body:
+        schema: |
+          {
+            "$schema": "http://json-schema.org/draft-03/schema",
+            "type": "object" ,
+            "properties": {
+              "email": {
+                "description": "用户邮箱，也是登陆帐号",
+                "type": "string"
+              },
+              "name": {
+                "description": "用户姓名",
+                "type": "string"
+              },
+              "role": {
+                "description": "用户角色",
+                "type": [ "coadmin", "user" ]
+              }, 
+              "jobTitle": {
+                "description": "工作职位",
+                "type": "string"
+              },
+              "phone": {
+                "description": "手机号码",
+                "type": "string"
+              },
+              "address": {
+                "description": "地址",
+                "type": "string"
+              },
+              "status": {
+                "description": "用户状态，有效(active)，封禁(inactive)",
+                "type": [ "active", "inactive" ]
+              },
+              "avatarUrl": {
+                "description": "用户头像的地址",
+                "type": "string"
+              }
+            }
+          }
+      responses:
+        200:
+          body:
+            example: |
+              {
+                  "id": "181216415",
+                  "name": "张成文",
+                  "email": "chengwenZhang@y2w.com",
+                  "createdAt": "2012-05-03T21:39:11-07:00",
+                  "updatedAt": "2012-08-23T14:57:48-07:00",
+                  "role": "user",
+                  "status": "active",
+                  "jobTitle": "美容师",
+                  "phone": "18437626312",
+                  "address": "广东省深圳市罗湖区和平路云文大厦1039B",
+                  "avatarUrl": "https://api.yun2win.com/api/avatar/large/181216415"
+              }
+            schema: |
+              {
+              	"$schema": "http://json-schema.org/draft-03/schema",
+              	"type": "object" ,
+              	"properties": {
+              		"id": {
+                    "description": "用户唯一标识码",
+                    "type": "string"
+                  },
+                  "name": {
+                    "description": "用户姓名",
+                    "type": "string"
+                  },
+                  "email": {
+                    "description": "用户邮箱，也是登陆帐号",
+                    "type": "string"
+                  },
+                  "createdAt": {
+                    "description": "创建时间",
+                    "type": "date"
+                  },
+                  "updatedAt": {
+                    "description": "修改时间",
+                    "type": "date"
+                  },
+                  "role": {
+                    "description": "用户角色",
+                    "enum": [ "admin", "coadmin", "user" ]
+                  },
+                  "status": {
+                    "description": "用户状态，有效(active)，封禁(inactive)",
+                    "enum": [ "active", "inactive" ]
+                  },
+                  "jobTitle": {
+                    "description": "工作职位",
+                    "type": "string"
+                  },
+                  "phone": {
+                    "description": "手机号码",
+                    "type": "string"
+                  },
+                  "address": {
+                    "description": "地址",
+                    "type": "string"
+                  },
+                  "avatarUrl": {
+                    "description": "用户头像的地址",
+                    "type": "string"
+                  }
+              	}
+              } 
+    delete:
+      description: |
+        删除应用的一个用户。
+      queryParameters:
+        force:
+          description: |
+            是否强制删除，不管此用户还有多少遗留信息
+          type: string
+      responses:
+        200: 
+          description: 确认成功删除用户.
+    /contacts:
+      type: base
+      description: |
+        用户的联系人列表
+      get:
+        description: |
+          获取本用户的联系人列表.
+        queryParameters:
+          filter_term:
+            description: |
+              用来筛选本用户联系人的参数。可以是姓名或是邮箱。
+            type: string
+          limit:
+            description: 返回结果集的数量
+            type: integer
+            default: 100
+            maximum: 1000
+          offset:
+            description: 返回结果集的起点
+            type: integer
+            default: 0
+        responses:
+          200:
+            body:
+              example: |
+                {
+                    "total_count": 1,
+                    "entries": [
+                        { 
+                            "id": "181216415",
+                            "userId": "138493982",
+                            "name": "~&嘀嗒&=-",
+                            "title": "张小三",
+                            "remark": "此人爱瘪三",
+                            "isDelete": false,
+                            "email": "chengwenZhang@y2w.com",
+                            "createdAt": "2012-05-03T21:39:11-07:00",
+                            "updatedAt": "2012-08-23T14:57:48-07:00",  
+                            "avatarUrl": "https://api.yun2win.com/api/avatar/large/181216415"
+                        }
+                    ]
+                }
+              schema: |
+                {
+                  "$schema": "http://json-schema.org/draft-03/schema",
+                  "type": "object" ,
+                  "properties": {
+                    "total_count": {
+                      "type": "integer"
+                    },
+                    "entries": [
+                      {
+                        "properties": { 
+                          "id": {
+                            "description": "联系人唯一标识码",
+                            "type": "string"
+                          },
+                          "userId": {
+                            "description": "用户唯一标识码",
+                            "type": "string"
+                          },
+                          "name": {
+                            "description": "用户姓名",
+                            "type": "string"
+                          },
+                          "title": {
+                            "description": "用户姓名备注",
+                            "type": "string"
+                          },
+                          "remark": {
+                            "description": "其它备注",
+                            "type": "string"
+                          },
+                          "email": {
+                            "description": "用户邮箱，也是登陆帐号",
+                            "type": "string"
+                          },
+                          "isDelete": {
+                            "description": "如果为true, 表示服务器已删除了此实体，同步时请在客户端也删除",
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "description": "创建时间",
+                            "type": "date"
+                          },
+                          "updatedAt": {
+                            "description": "修改时间",
+                            "type": "date"
+                          },
+                          "avatarUrl": {
+                            "description": "用户头像的地址",
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ],
+                    "type": "array"
+                  }
+                }
+      post:
+        description: |
+          新增用户联系人
+        body:
+          schema: |
+            {
+              "$schema": "http://json-schema.org/draft-03/schema",
+              "type": "object" ,
+              "properties": {
+                "userId": {
+                  "description": "用户唯一标识码",
+                  "type": "string"
+                },
+                "email": {
+                  "description": "用户邮箱，也是登陆帐号",
+                  "type": "string"
+                },
+                "name": {
+                  "description": "用户姓名",
+                  "type": "string"
+                },
+                "title": {
+                  "description": "用户姓名备注",
+                  "type": "string"
+                },
+                "remark": {
+                  "description": "其它备注",
+                  "type": "string"
+                },
+                "avatarUrl": {
+                  "description": "用户头像的地址",
+                  "type": "string"
+                }
+              },
+              "required": [ "userId", "name" ]
+            }
+        responses:
+          201:
+            body:
+              example: |
+                {
+                    "id": "181216415",
+                    "userId": "138493982",
+                    "name": "~&嘀嗒&=-",
+                    "title": "张小三",
+                    "remark": "此人爱瘪三",
+                    "email": "chengwenZhang@y2w.com",
+                    "createdAt": "2012-05-03T21:39:11-07:00",
+                    "updatedAt": "2012-08-23T14:57:48-07:00",  
+                    "avatarUrl": "https://api.yun2win.com/api/avatar/large/181216415"
+                }
+              schema: |
+                {
+                  "$schema": "http://json-schema.org/draft-03/schema",
+                  "type": "object" ,
+                  "properties": {
+                    "id": {
+                      "description": "联系人唯一标识码",
+                      "type": "string"
+                    },
+                    "userId": {
+                      "description": "用户唯一标识码",
+                      "type": "string"
+                    },
+                    "name": {
+                      "description": "用户姓名",
+                      "type": "string"
+                    }, 
+                    "title": {
+                      "description": "用户姓名备注",
+                      "type": "string"
+                    },
+                    "remark": {
+                      "description": "其它备注",
+                      "type": "string"
+                    },
+                    "email": {
+                      "description": "用户邮箱，也是登陆帐号",
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "description": "创建时间",
+                      "type": "date"
+                    },
+                    "updatedAt": {
+                      "description": "修改时间",
+                      "type": "date"
+                    },
+                    "avatarUrl": {
+                      "description": "用户头像的地址",
+                      "type": "string"
+                    }
+                  }
+                }  
+      /{contactId}: 
+        type: base
+        uriParameters:
+          contactId:
+            description: 联系人唯一标识码。
+            type: string 
+        description: |
+          用户的某个联系人
+        get:
+          description: |
+            获取此联系人信息.
+          responses:
+            200:
+              body:
+                example: |
+                  {
+                      "id": "181216415",
+                      "userId": "138493982",
+                      "name": "~&嘀嗒&=-",
+                      "title": "张小三",
+                      "remark": "此人爱瘪三",
+                      "email": "chengwenZhang@y2w.com",
+                      "createdAt": "2012-05-03T21:39:11-07:00",
+                      "updatedAt": "2012-08-23T14:57:48-07:00",  
+                      "avatarUrl": "https://api.yun2win.com/api/avatar/large/181216415"
+                  }
+                schema: |
+                  {
+                    "$schema": "http://json-schema.org/draft-03/schema",
+                    "type": "object" ,
+                    "properties": {
+                      "id": {
+                        "description": "联系人唯一标识码",
+                        "type": "string"
+                      },
+                      "userId": {
+                        "description": "用户唯一标识码",
+                        "type": "string"
+                      },
+                      "name": {
+                        "description": "用户姓名",
+                        "type": "string"
+                      },
+                      "title": {
+                        "description": "用户姓名备注",
+                        "type": "string"
+                      },
+                      "remark": {
+                        "description": "其它备注",
+                        "type": "string"
+                      },
+                      "email": {
+                        "description": "用户邮箱，也是登陆帐号",
+                        "type": "string"
+                      },
+                      "createdAt": {
+                        "description": "创建时间",
+                        "type": "date"
+                      },
+                      "updatedAt": {
+                        "description": "修改时间",
+                        "type": "date"
+                      },
+                      "avatarUrl": {
+                        "description": "用户头像的地址",
+                        "type": "string"
+                      }
+                    }
+                  }  
+        put:
+          description: |
+            更新联系人信息.
+          body:
+            schema: |
+              {
+                "$schema": "http://json-schema.org/draft-03/schema",
+                "type": "object" ,
+                "properties": { 
+                  "email": {
+                    "description": "用户邮箱，也是登陆帐号",
+                    "type": "string"
+                  },
+                  "name": {
+                    "description": "用户姓名",
+                    "type": "string"
+                  },
+                  "title": {
+                    "description": "用户姓名备注",
+                    "type": "string"
+                  },
+                  "remark": {
+                    "description": "其它备注",
+                    "type": "string"
+                  },
+                  "avatarUrl": {
+                    "description": "用户头像的地址",
+                    "type": "string"
+                  }
+                },
+                "required": [ "name" ]
+              }
+          responses:
+            201:
+              body:
+                example: |
+                  {
+                      "id": "181216415",
+                      "userId": "138493982",
+                      "name": "~&嘀嗒&=-",
+                      "title": "张小三",
+                      "remark": "此人爱瘪三",
+                      "email": "chengwenZhang@y2w.com",
+                      "createdAt": "2012-05-03T21:39:11-07:00",
+                      "updatedAt": "2012-08-23T14:57:48-07:00",  
+                      "avatarUrl": "https://api.yun2win.com/api/avatar/large/181216415"
+                  }
+                schema: |
+                  {
+                    "$schema": "http://json-schema.org/draft-03/schema",
+                    "type": "object" ,
+                    "properties": {
+                      "id": {
+                        "description": "联系人唯一标识码",
+                        "type": "string"
+                      },
+                      "userId": {
+                        "description": "用户唯一标识码",
+                        "type": "string"
+                      },
+                      "name": {
+                        "description": "用户姓名",
+                        "type": "string"
+                      },
+                      "title": {
+                        "description": "用户姓名备注",
+                        "type": "string"
+                      },
+                      "remark": {
+                        "description": "其它备注",
+                        "type": "string"
+                      },
+                      "email": {
+                        "description": "用户邮箱，也是登陆帐号",
+                        "type": "string"
+                      },
+                      "createdAt": {
+                        "description": "创建时间",
+                        "type": "date"
+                      },
+                      "updatedAt": {
+                        "description": "修改时间",
+                        "type": "date"
+                      },
+                      "avatarUrl": {
+                        "description": "用户头像的地址",
+                        "type": "string"
+                      }
+                    }
+                  }  
+        delete:
+          description: |
+            删除用户的一个联系人。
+          responses:
+            200: 
+              description: 确认成功删除联系人.
+
+    /userConversations:
+      type: base
+      description: |
+        用户会话列表
+      get:
+        description: |
+          获取本用户的用户会话列表.
+        queryParameters: 
+          limit:
+            description: 返回结果集的数量
+            type: integer
+            default: 100
+            maximum: 1000
+          offset:
+            description: 返回结果集的起点
+            type: integer
+            default: 0
+        responses:
+          200:
+            body:
+              example: |
+                {
+                    "total_count": 1,
+                    "entries": [
+                        { 
+                            "id": "181216415",
+                            "targetId": "1384939182",
+                            "name": "张成文", 
+                            "type": "p2p",
+                            "top": true,
+                            "visiable": true,
+                            "unread": 2,
+                            "lastMessage":{
+                              sender:"1231231",
+                              type:"text",
+                              content:"这是一条消息",
+                              createdAt:"2012-08-23T14:57:48-07:00" 
+                            },
+                            "isDelete": false,
+                            "createdAt": "2012-05-03T21:39:11-07:00",
+                            "updatedAt": "2012-08-23T14:57:48-07:00",
+                            "avatarUrl": "https://api.yun2win.com/api/avatar/large/181216415"
+                        }
+                    ]
+                }
+              schema: |
+                {
+                  "$schema": "http://json-schema.org/draft-03/schema",
+                  "type": "object" ,
+                  "properties": {
+                    "total_count": {
+                      "type": "integer"
+                    },
+                    "entries": [
+                      {
+                        "properties": { 
+                          "id": {
+                            "description": "用户会话唯一标识码",
+                            "type": "string"
+                          },
+                          "targetId": {
+                            "description": "目标ID, type为p2p时为对方UserId,type为group时为群组的Id",
+                            "type": "string"
+                          },
+                          "name": {
+                            "description": "用户会话名称",
+                            "type": "string"
+                          },
+                          "type": {
+                            "description": "用户邮箱，也是登陆帐号",
+                            "type": [ "p2p", "single", "group","assistant" ]
+                          },
+                          "isDelete": {
+                            "description": "如果为true, 表示服务器已删除了此实体，同步时请在客户端也删除",
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "description": "创建时间",
+                            "type": "date"
+                          },
+                          "updatedAt": {
+                            "description": "修改时间",
+                            "type": "date"
+                          },
+                          "avatarUrl": {
+                            "description": "用户会话头像的地址",
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ],
+                    "type": "array"
+                  }
+                }
+      post:
+        description: |
+          新增用户会话
+        body:
+          schema: |
+            {
+              "$schema": "http://json-schema.org/draft-03/schema",
+              "type": "object" ,
+              "properties": {
+                "targetId": {
+                  "description": "目标ID, type为p2p时为对方UserId,type为group时为群组的Id",
+                  "type": "string"
+                },
+                "name": {
+                  "description": "用户会话名称",
+                  "type": "string"
+                },
+                "type": {
+                  "description": "用户邮箱，也是登陆帐号",
+                  "type": [ "p2p", "group","assistant" ]
+                },
+                "avatarUrl": {
+                  "description": "用户会话头像的地址",
+                  "type": "string"
+                }
+              },
+              "required": [ "targetId", "name" ]
+            }
+        responses:
+          201:
+            body:
+              example: |
+                { 
+                    "id": "181216415",
+                    "targetId": "1384939182",
+                    "name": "张成文", 
+                    "type": "p2p",
+                    "top": true,
+                    "createdAt": "2012-05-03T21:39:11-07:00",
+                    "updatedAt": "2012-08-23T14:57:48-07:00"
+                    "avatarUrl": "https://api.yun2win.com/api/avatar/large/181216415"
+                }
+              schema: |
+                {
+                  "$schema": "http://json-schema.org/draft-03/schema",
+                  "type": "object" ,
+                  "properties": {
+                    "id": {
+                      "description": "用户会话唯一标识码",
+                      "type": "string"
+                    },
+                    "targetId": {
+                      "description": "目标ID, 类型为p2p,group时targetId为会话的ID",
+                      "type": "string"
+                    },
+                    "name": {
+                      "description": "用户会话名称",
+                      "type": "string"
+                    },
+                    "type": {
+                      "description": "用户邮箱，也是登陆帐号",
+                      "type": [ "p2p", "group","assistant" ]
+                    },
+                    "createdAt": {
+                      "description": "创建时间",
+                      "type": "date"
+                    },
+                    "updatedAt": {
+                      "description": "修改时间",
+                      "type": "date"
+                    },
+                    "avatarUrl": {
+                      "description": "用户会话头像的地址",
+                      "type": "string"
+                    }
+                  }
+                }  
+      /{userConversationId}: 
+        type: base
+        uriParameters:
+          userConversationId:
+            description: 用户会话唯一标识码。
+            type: string 
+        description: |
+          用户会话
+        get:
+          description: |
+            获取此用户会话信息.
+          responses:
+            200:
+              body:
+                example: |
+                  { 
+                      "id": "181216415",
+                      "targetId": "1384939182",
+                      "name": "张成文", 
+                      "type": "p2p",
+                      "top": true,
+                      "createdAt": "2012-05-03T21:39:11-07:00",
+                      "updatedAt": "2012-08-23T14:57:48-07:00"
+                      "avatarUrl": "https://api.yun2win.com/api/avatar/large/181216415"
+                  }
+                schema: |
+                  {
+                    "$schema": "http://json-schema.org/draft-03/schema",
+                    "type": "object" ,
+                    "properties": {
+                      "id": {
+                        "description": "用户会话唯一标识码",
+                        "type": "string"
+                      },
+                      "targetId": {
+                        "description": "目标ID, type为p2p时为对方UserId,type为group时为群组的Id",
+                        "type": "string"
+                      },
+                      "name": {
+                        "description": "用户会话名称",
+                        "type": "string"
+                      },
+                      "type": {
+                        "description": "用户邮箱，也是登陆帐号",
+                        "type": [ "p2p", "group","assistant" ]
+                      },
+                      "createdAt": {
+                        "description": "创建时间",
+                        "type": "date"
+                      },
+                      "updatedAt": {
+                        "description": "修改时间",
+                        "type": "date"
+                      },
+                      "avatarUrl": {
+                        "description": "用户会话头像的地址",
+                        "type": "string"
+                      }
+                    }
+                  }  
+        put:
+          description: |
+            更新用户会话信息.
+          body:
+            schema: |
+              {
+                "$schema": "http://json-schema.org/draft-03/schema",
+                "type": "object" ,
+                "properties": {
+                  "targetId": {
+                    "description": "目标ID, type为p2p时为对方UserId,type为group时为群组的Id",
+                    "type": "string"
+                  },
+                  "name": {
+                    "description": "用户会话名称",
+                    "type": "string"
+                  },
+                  "type": {
+                    "description": "用户邮箱，也是登陆帐号",
+                    "type": [ "p2p", "group","assistant" ]
+                  },
+                  "avatarUrl": {
+                    "description": "用户会话头像的地址",
+                    "type": "string"
+                  }
+                },
+                "required": [ "userId", "name" ]
+              }
+          responses:
+            201:
+              body:
+                example: |
+                  { 
+                      "id": "181216415",
+                      "targetId": "1384939182",
+                      "name": "张成文", 
+                      "type": "p2p",
+                      "top": true,
+                      "createdAt": "2012-05-03T21:39:11-07:00",
+                      "updatedAt": "2012-08-23T14:57:48-07:00"
+                      "avatarUrl": "https://api.yun2win.com/api/avatar/large/181216415"
+                  }
+                schema: |
+                  {
+                    "$schema": "http://json-schema.org/draft-03/schema",
+                    "type": "object" ,
+                    "properties": {
+                      "id": {
+                        "description": "用户会话唯一标识码",
+                        "type": "string"
+                      },
+                      "targetId": {
+                        "description": "目标ID, 类型为p2p,group时targetId为会话的ID",
+                        "type": "string"
+                      },
+                      "name": {
+                        "description": "用户会话名称",
+                        "type": "string"
+                      },
+                      "type": {
+                        "description": "用户邮箱，也是登陆帐号",
+                        "type": [ "p2p", "group","assistant" ]
+                      },
+                      "createdAt": {
+                        "description": "创建时间",
+                        "type": "date"
+                      },
+                      "updatedAt": {
+                        "description": "修改时间",
+                        "type": "date"
+                      },
+                      "avatarUrl": {
+                        "description": "用户会话头像的地址",
+                        "type": "string"
+                      }
+                    }
+                  }  
+        delete:
+          description: |
+            删除用户的一个用户会话。
+          responses:
+            200: 
+              description: 确认成功删除用户会话.
+
+        
+    /userSessions:
+      type: base
+      description: |
+        用户群组列表
+      get:
+        description: |
+          获取本用户的用户群组列表.
+        queryParameters: 
+          limit:
+            description: 返回结果集的数量
+            type: integer
+            default: 100
+            maximum: 1000
+          offset:
+            description: 返回结果集的起点
+            type: integer
+            default: 0
+        responses:
+          200:
+            body:
+              example: |
+                {
+                    "total_count": 1,
+                    "entries": [
+                        { 
+                            "id": "181216415",
+                            "sessionId": "1384939182",
+                            "name": "讨论群", 
+                            "isDelete": false,
+                            "createdAt": "2012-05-03T21:39:11-07:00",
+                            "updatedAt": "2012-08-23T14:57:48-07:00",
+                            "avatarUrl": "https://api.yun2win.com/api/avatar/large/181216415"
+                        }
+                    ]
+                }
+              schema: |
+                {
+                  "$schema": "http://json-schema.org/draft-03/schema",
+                  "type": "object" ,
+                  "properties": {
+                    "total_count": {
+                      "type": "integer"
+                    },
+                    "entries": [
+                      {
+                        "properties": { 
+                          "id": {
+                            "description": "用户会话唯一标识码",
+                            "type": "string"
+                          },
+                          "sessionId": {
+                            "description": "群组唯一标识码",
+                            "type": "string"
+                          },
+                          "name": {
+                            "description": "用户群组名称",
+                            "type": "string"
+                          }, 
+                          "isDelete": {
+                            "description": "如果为true, 表示服务器已删除了此实体，同步时请在客户端也删除",
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "description": "创建时间",
+                            "type": "date"
+                          },
+                          "updatedAt": {
+                            "description": "修改时间",
+                            "type": "date"
+                          },
+                          "avatarUrl": {
+                            "description": "群组头像的地址",
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ],
+                    "type": "array"
+                  }
+                }
+      post:
+        description: |
+          新增用户会话
+        body:
+          schema: |
+            {
+              "$schema": "http://json-schema.org/draft-03/schema",
+              "type": "object" ,
+              "properties": { 
+                "sessionId": {
+                  "description": "群组唯一标识码",
+                  "type": "string"
+                },
+                "name": {
+                  "description": "用户群组名称",
+                  "type": "string"
+                }, 
+                "avatarUrl": {
+                  "description": "群组头像的地址",
+                  "type": "string"
+                }
+              },
+              "required": [ "sessionId", "name","avatarUrl" ]
+            }
+        responses:
+          201:
+            body:
+              example: |
+                { 
+                    "id": "181216415",
+                    "sessionId": "1384939182",
+                    "name": "讨论群", 
+                    "isDelete": false,
+                    "createdAt": "2012-05-03T21:39:11-07:00",
+                    "updatedAt": "2012-08-23T14:57:48-07:00",
+                    "avatarUrl": "https://api.yun2win.com/api/avatar/large/181216415"
+                }
+              schema: |
+                {
+                  "$schema": "http://json-schema.org/draft-03/schema",
+                  "type": "object" ,
+                  "properties": {
+                    "id": {
+                      "description": "用户会话唯一标识码",
+                      "type": "string"
+                    },
+                    "sessionId": {
+                      "description": "群组唯一标识码",
+                      "type": "string"
+                    },
+                    "name": {
+                      "description": "用户群组名称",
+                      "type": "string"
+                    }, 
+                    "isDelete": {
+                      "description": "如果为true, 表示服务器已删除了此实体，同步时请在客户端也删除",
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "description": "创建时间",
+                      "type": "date"
+                    },
+                    "updatedAt": {
+                      "description": "修改时间",
+                      "type": "date"
+                    },
+                    "avatarUrl": {
+                      "description": "群组头像的地址",
+                      "type": "string"
+                    }
+                  }
+                }  
+      /{userSessionId}: 
+        type: base
+        uriParameters:
+          userSessionId:
+            description: 用户群组唯一标识码。
+            type: string 
+        description: |
+          用户群组
+        get:
+          description: |
+            获取此用户会话信息.
+          responses:
+            200:
+              body:
+                example: |
+                  { 
+                      "id": "181216415",
+                      "sessionId": "1384939182",
+                      "name": "讨论群", 
+                      "isDelete": false,
+                      "createdAt": "2012-05-03T21:39:11-07:00",
+                      "updatedAt": "2012-08-23T14:57:48-07:00",
+                      "avatarUrl": "https://api.yun2win.com/api/avatar/large/181216415"
+                  }
+                schema: |
+                  {
+                    "$schema": "http://json-schema.org/draft-03/schema",
+                    "type": "object" ,
+                    "properties": {
+                      "id": {
+                        "description": "用户会话唯一标识码",
+                        "type": "string"
+                      },
+                      "sessionId": {
+                        "description": "群组唯一标识码",
+                        "type": "string"
+                      },
+                      "name": {
+                        "description": "用户群组名称",
+                        "type": "string"
+                      }, 
+                      "isDelete": {
+                        "description": "如果为true, 表示服务器已删除了此实体，同步时请在客户端也删除",
+                        "type": "string"
+                      },
+                      "createdAt": {
+                        "description": "创建时间",
+                        "type": "date"
+                      },
+                      "updatedAt": {
+                        "description": "修改时间",
+                        "type": "date"
+                      },
+                      "avatarUrl": {
+                        "description": "群组头像的地址",
+                        "type": "string"
+                      }
+                    }
+                  }  
+        put:
+          description: |
+            更新用户会话信息.
+          body:
+            schema: |
+              {
+                "$schema": "http://json-schema.org/draft-03/schema",
+                "type": "object" ,
+                "properties": {
+                  "sessionId": {
+                    "description": "群组唯一标识码",
+                    "type": "string"
+                  },
+                  "name": {
+                    "description": "用户群组名称",
+                    "type": "string"
+                  }, 
+                  "avatarUrl": {
+                    "description": "群组头像的地址",
+                    "type": "string"
+                  }
+                },
+                "required": [ "sessionId", "name","avatarUrl" ]
+              }
+          responses:
+            201:
+              body:
+                example: |
+                  { 
+                      "id": "181216415",
+                      "sessionId": "1384939182",
+                      "name": "讨论群", 
+                      "isDelete": false,
+                      "createdAt": "2012-05-03T21:39:11-07:00",
+                      "updatedAt": "2012-08-23T14:57:48-07:00",
+                      "avatarUrl": "https://api.yun2win.com/api/avatar/large/181216415"
+                  }
+                schema: |
+                  {
+                    "$schema": "http://json-schema.org/draft-03/schema",
+                    "type": "object" ,
+                    "properties": {
+                      "id": {
+                        "description": "用户会话唯一标识码",
+                        "type": "string"
+                      },
+                      "sessionId": {
+                        "description": "群组唯一标识码",
+                        "type": "string"
+                      },
+                      "name": {
+                        "description": "用户群组名称",
+                        "type": "string"
+                      }, 
+                      "isDelete": {
+                        "description": "如果为true, 表示服务器已删除了此实体，同步时请在客户端也删除",
+                        "type": "string"
+                      },
+                      "createdAt": {
+                        "description": "创建时间",
+                        "type": "date"
+                      },
+                      "updatedAt": {
+                        "description": "修改时间",
+                        "type": "date"
+                      },
+                      "avatarUrl": {
+                        "description": "群组头像的地址",
+                        "type": "string"
+                      }
+                    }
+                  }  
+        delete:
+          description: |
+            删除用户的一个用户群组。
+          responses:
+            200: 
+              description: 确认成功删除用户群组.
+
+        
+/sessions:
+  type: base
+  description: |
+    应用的会话集
+  get:
+    description: |
+      获取应用的会话列表
+    queryParameters: 
+      asyncTime:
+        description: |
+          时间戳，设定返回在此时间之后有更新的联系人
+        type: date
+      limit:
+        description: 返回结果集的数量
+        type: integer
+        default: 100
+        maximum: 1000
+      offset:
+        description: 返回结果集的起点
+        type: integer
+        default: 0
+    responses:
+      200:
+        body: 
+          example: |
+            {
+                "total_count": 1,
+                "entries": [
+                    { 
+                        "id": "181216415", 
+                        "name": "开发讨论群",
+                        "secureType": "publish", 
+                        "type": "group",
+                        "description": "这是一个群",
+                        "isDelete": false,
+                        "createdAt": "2012-05-03T21:39:11-07:00",
+                        "updatedAt": "2012-08-23T14:57:48-07:00",  
+                        "avatarUrl": "https://api.yun2win.com/api/avatar/large/181216415"
+                    }
+                ]
+            }
+          schema: |
+            {
+              "$schema": "http://json-schema.org/draft-03/schema",
+              "type": "object" ,
+              "properties": {
+                "total_count": {
+                  "type": "integer"
+                },
+                "entries": [
+                  {
+                    "properties": { 
+                      "id": {
+                        "description": "群唯一标识码",
+                        "type": "string"
+                      }, 
+                      "name": {
+                        "description": "群组名称",
+                        "type": "string"
+                      },
+                      "secureType": {
+                        "description": "群组安全类型",
+                        "enum": [ "public", "private" ]
+                      },
+                      "type":{
+                        "description": "群组类型",
+                        "enum": [ "p2p", "single", "group" ]
+                      },
+                      "isDelete": {
+            						"description": "如果为true, 表示服务器已删除了此实体，同步时请在客户端也删除",
+            						"type": "string"
+            					},
+                      "createdAt": {
+                        "description": "创建时间",
+                        "type": "date"
+                      },
+                      "updatedAt": {
+                        "description": "修改时间",
+                        "type": "date"
+                      },
+                      "avatarUrl": {
+                        "description": "群头像的地址",
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  }
+                ],
+                "type": "array"
+              }
+            }
+  post:
+    description: |
+      新建群
+    body:
+      schema: |
+        {
+          "$schema": "http://json-schema.org/draft-03/schema",
+          "type": "object" ,
+          "properties": {
+            "name": {
+              "description": "名称",
+              "type": "string"
+            },
+            "secureType": {
+              "description": "安全类型",
+              "enum": [ "public", "private" ]
+            },
+            "type":{
+              "description": "类型",
+              "enum": [ "p2p", "single", "group" ]
+            },
+            "avatarUrl": {
+              "description": "群头像的地址",
+              "type": "string"
+            }
+          },
+          "required": [ "type", "name", "secureType" ]
+        }
+    responses:
+      201:
+        body:
+          example: |
+            {
+                "id": "181216415", 
+                "name": "开发讨论群",
+                "secureType": "publish", 
+                "type": "group", 
+                "description": "这是一个群",
+                "createdAt": "2012-05-03T21:39:11-07:00",
+                "updatedAt": "2012-08-23T14:57:48-07:00",  
+                "avatarUrl": "https://api.yun2win.com/api/avatar/large/181216415"
+            }
+          schema: |
+            {
+            	"$schema": "http://json-schema.org/draft-03/schema",
+            	"type": "object" ,
+            	"properties": {
+            		"id": {
+                  "description": "会话唯一标识码",
+                  "type": "string"
+                }, 
+                "name": {
+                  "description": "名称",
+                  "type": "string"
+                },
+                "secureType": {
+                  "description": "安全类型",
+                  "enum": [ "public", "private" ]
+                },
+                "type":{
+                  "description": "类型",
+                  "enum": [ "p2p", "single", "group" ]
+                },
+                "createdAt": {
+                  "description": "创建时间",
+                  "type": "date"
+                },
+                "updatedAt": {
+                  "description": "修改时间",
+                  "type": "date"
+                },
+                "avatarUrl": {
+                  "description": "头像的地址",
+                  "type": "string"
+                }
+            	}
+            }  
+       
+  /p2p/{aUserId}/{bUserId}:
+    type: base
+    uriParameters: 
+      aUserId:
+        description: 一方用户唯一标识码
+        type: string
+      bUserId:
+        description: 另一方用户唯一标识码
+        type: string
+    description: |
+      获取p2p双方私聊的会话，如果会话不存在，则会自动创建。
+    get:
+      description: |
+        获取此会话信息.
+      responses:
+        200:
+          body:
+            example: |
+              {
+                  "id": "181216415", 
+                  "name": "张&辽私聊",
+                  "secureType": "private", 
+                  "type": "p2p", 
+                  "description": "",
+                  "createdAt": "2012-05-03T21:39:11-07:00",
+                  "updatedAt": "2012-08-23T14:57:48-07:00",  
+                  "avatarUrl": ""
+              }
+            schema: |
+              {
+                "$schema": "http://json-schema.org/draft-03/schema",
+                "type": "object" ,
+                "properties": {
+                  "id": {
+                    "description": "会话唯一标识码",
+                    "type": "string"
+                  }, 
+                  "name": {
+                    "description": "名称",
+                    "type": "string"
+                  },
+                  "description": {
+                    "description": "描述",
+                    "type": "string"
+                  },
+                  "secureType": {
+                    "description": "安全类型",
+                    "enum": [ "private" ]
+                  },
+                  "type":{
+                    "description": "类型",
+                    "enum": [ "p2p" ]
+                  },
+                  "createdAt": {
+                    "description": "创建时间",
+                    "type": "date"
+                  },
+                  "updatedAt": {
+                    "description": "修改时间",
+                    "type": "date"
+                  },
+                  "avatarUrl": {
+                    "description": "头像的地址",
+                    "type": "string"
+                  }
+                }
+              }  
+      
+  
+  /{sessionId}:
+    type: base
+    uriParameters:
+      sessionId:
+        description: 会话唯一标识码
+        type: string 
+    description: |
+      会话
+    get:
+      description: |
+        获取此会话信息.
+      responses:
+        200:
+          body:
+            example: |
+              {
+                  "id": "181216415", 
+                  "name": "开发讨论群",
+                  "secureType": "publish", 
+                  "type": "group", 
+                  "description": "这是一个群",
+                  "createdAt": "2012-05-03T21:39:11-07:00",
+                  "updatedAt": "2012-08-23T14:57:48-07:00",  
+                  "avatarUrl": "https://api.yun2win.com/api/avatar/large/181216415"
+              }
+            schema: |
+              {
+                "$schema": "http://json-schema.org/draft-03/schema",
+                "type": "object" ,
+                "properties": {
+                  "id": {
+                    "description": "会话唯一标识码",
+                    "type": "string"
+                  }, 
+                  "name": {
+                    "description": "名称",
+                    "type": "string"
+                  },
+                  "secureType": {
+                    "description": "安全类型",
+                    "enum": [ "public", "private" ]
+                  },
+                  "type":{
+                    "description": "类型",
+                    "enum": [ "p2p", "single", "group" ]
+                  },
+                  "createdAt": {
+                    "description": "创建时间",
+                    "type": "date"
+                  },
+                  "updatedAt": {
+                    "description": "修改时间",
+                    "type": "date"
+                  },
+                  "avatarUrl": {
+                    "description": "头像的地址",
+                    "type": "string"
+                  }
+                }
+              }  
+      
+    put:
+      description: |
+        更新会话信息.
+      body:
+        schema: |
+          {
+            "$schema": "http://json-schema.org/draft-03/schema",
+            "type": "object" ,
+            "properties": {
+              "name": {
+                "description": "名称",
+                "type": "string"
+              },
+              "secureType": {
+                "description": "安全类型",
+                "enum": [ "public", "private" ]
+              },
+              "type":{
+                "description": "类型",
+                "enum": [ "p2p", "single", "group" ]
+              },
+              "createdAt": {
+                "description": "创建时间",
+                "type": "date"
+              },
+              "updatedAt": {
+                "description": "修改时间",
+                "type": "date"
+              },
+              "avatarUrl": {
+                "description": "头像的地址",
+                "type": "string"
+              }
+            }
+          }
+      responses:
+        200:
+          body:
+            example: |
+              {
+                  "id": "181216415", 
+                  "name": "开发讨论群",
+                  "secureType": "publish", 
+                  "type": "group", 
+                  "description": "这是一个群",
+                  "createdAt": "2012-05-03T21:39:11-07:00",
+                  "updatedAt": "2012-08-23T14:57:48-07:00",  
+                  "avatarUrl": "https://api.yun2win.com/api/avatar/large/181216415"
+              }
+            schema: |
+              {
+                "$schema": "http://json-schema.org/draft-03/schema",
+                "type": "object" ,
+                "properties": {
+                  "id": {
+                    "description": "唯一标识码",
+                    "type": "string"
+                  }, 
+                  "name": {
+                    "description": "名称",
+                    "type": "string"
+                  },
+                  "secureType": {
+                    "description": "安全类型",
+                    "enum": [ "public", "private" ]
+                  },
+                  "type":{
+                    "description": "类型",
+                    "enum": [ "p2p", "single", "group" ]
+                  },
+                  "createdAt": {
+                    "description": "创建时间",
+                    "type": "date"
+                  },
+                  "updatedAt": {
+                    "description": "修改时间",
+                    "type": "date"
+                  },
+                  "avatarUrl": {
+                    "description": "头像的地址",
+                    "type": "string"
+                  }
+                }
+              }  
+    delete:
+      description: |
+        删除会话。 
+      responses:
+        200: 
+          description: 确认成功删除群组.
+    
+    /members:
+      type: base
+      description: |
+        会话成员集
+      get:
+        description: |
+          获取本会话成员列表.
+        queryParameters:
+          limit:
+            description: 返回结果集的数量
+            type: integer
+            default: 100
+            maximum: 1000
+          offset:
+            description: 返回结果集的起点
+            type: integer
+            default: 0
+        responses:
+          200:
+            body:
+              example: |
+                {
+                    "total_count": 1,
+                    "entries": [
+                        { 
+                            "id": "181216415",
+                            "userId": "1838478383",
+                            "name": "张成文", 
+                            "isDelete": false,
+                            "createdAt": "2012-05-03T21:39:11-07:00",
+                            "updatedAt": "2012-08-23T14:57:48-07:00",
+                            "role": "user",
+                            "status": "active"
+                        }
+                    ]
+                }
+              schema: |
+                {
+                  "$schema": "http://json-schema.org/draft-03/schema",
+                  "type": "object" ,
+                  "properties": {
+                    "total_count": {
+                      "type": "integer"
+                    },
+                    "entries": [
+                      {
+                        "properties": { 
+                          "id": {
+                            "description": "会话成员唯一标识码",
+                            "type": "string"
+                          },
+                          "userId": {
+                            "description": "用户唯一标识码",
+                            "type": "string"
+                          },
+                          "name": {
+                            "description": "会话成员名称",
+                            "type": "string"
+                          },
+                          "isDelete": {
+                            "description": "如果为true, 表示服务器已删除了此实体，同步时请在客户端也删除",
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "description": "创建时间",
+                            "type": "date"
+                          },
+                          "updatedAt": {
+                            "description": "修改时间",
+                            "type": "date"
+                          },
+                          "role": {
+                            "description": "用户角色",
+                            "enum": [ "master", "admin", "user" ]
+                          },
+                          "status": {
+                            "description": "用户状态，有效(active)，封禁(inactive)",
+                            "enum": [ "active", "inactive" ]
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ],
+                    "type": "array"
+                  }
+                }
+      post:
+        description: |
+          本群组新增成员
+        body:
+          schema: |
+            {
+              "$schema": "http://json-schema.org/draft-03/schema",
+              "type": "object" ,
+              "properties": {
+                "userId": {
+                  "description": "用户唯一标识码",
+                  "type": "string"
+                },
+                "name": {
+                  "description": "会话成员名称",
+                  "type": "string"
+                }, 
+                "role": {
+                  "description": "用户角色",
+                  "enum": [ "master", "admin", "user" ]
+                },
+                "avatarUrl": {
+                  "description": "用户头像",
+                  "type": "string"
+                },
+                "status": {
+                  "description": "用户状态，有效(active)，封禁(inactive)",
+                  "enum": [ "active", "inactive" ]
+                }
+              },
+              "required": [ "userId", "name" ]
+            }
+        responses:
+          201:
+            body:
+              example: | 
+                { 
+                    "id": "181216415",
+                    "userId": "1838478383",
+                    "name": "张成文", 
+                    "createdAt": "2012-05-03T21:39:11-07:00",
+                    "updatedAt": "2012-08-23T14:57:48-07:00",
+                    "role": "user",
+                    "status": "active"
+                } 
+              schema: |
+                {
+                  "$schema": "http://json-schema.org/draft-03/schema",
+                  "type": "object" ,
+                  "properties":  { 
+                    "id": {
+                      "description": "会话成员唯一标识码",
+                      "type": "string"
+                    },
+                    "userId": {
+                      "description": "用户唯一标识码",
+                      "type": "string"
+                    },
+                    "name": {
+                      "description": "会话成员名称",
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "description": "创建时间",
+                      "type": "date"
+                    },
+                    "updatedAt": {
+                      "description": "修改时间",
+                      "type": "date"
+                    },
+                    "role": {
+                      "description": "用户角色",
+                      "enum": [ "master", "admin", "user" ]
+                    },
+                    "status": {
+                      "description": "用户状态，有效(active)，封禁(inactive)",
+                      "enum": [ "active", "inactive" ]
+                    }
+                  } 
+                } 
+      /{memberId}:
+        type: base
+        description: |
+          会话成员
+        uriParameters:
+          memberId:
+            description: 会话成员唯一标识码
+            type: string
+        get:
+          description: |
+            获取此会话成员信息.
+          responses:
+            200:
+              body:
+                example: | 
+                  { 
+                      "id": "181216415",
+                      "userId": "1838478383",
+                      "name": "张成文", 
+                      "createdAt": "2012-05-03T21:39:11-07:00",
+                      "updatedAt": "2012-08-23T14:57:48-07:00",
+                      "role": "user",
+                      "status": "active"
+                  } 
+                schema: |
+                  {
+                    "$schema": "http://json-schema.org/draft-03/schema",
+                    "type": "object" ,
+                    "properties":  { 
+                      "id": {
+                        "description": "会话成员唯一标识码",
+                        "type": "string"
+                      },
+                      "userId": {
+                        "description": "用户唯一标识码",
+                        "type": "string"
+                      },
+                      "name": {
+                        "description": "会话成员名称",
+                        "type": "string"
+                      },
+                      "createdAt": {
+                        "description": "创建时间",
+                        "type": "date"
+                      },
+                      "updatedAt": {
+                        "description": "修改时间",
+                        "type": "date"
+                      },
+                      "role": {
+                        "description": "用户角色",
+                        "enum": [ "master", "admin", "user" ]
+                      },
+                      "status": {
+                        "description": "用户状态，有效(active)，封禁(inactive)",
+                        "enum": [ "active", "inactive" ]
+                      }
+                    } 
+                  }
+        put:
+          description: |
+            更新会话成员信息.
+          body:
+            schema: |
+              {
+                "$schema": "http://json-schema.org/draft-03/schema",
+                "type": "object" ,
+                "properties": {
+                  "userId": {
+                    "description": "用户唯一标识码",
+                    "type": "string"
+                  },
+                  "name": {
+                    "description": "会话成员名称",
+                    "type": "string"
+                  },
+                  "createdAt": {
+                    "description": "创建时间",
+                    "type": "date"
+                  },
+                  "updatedAt": {
+                    "description": "修改时间",
+                    "type": "date"
+                  },
+                  "role": {
+                    "description": "用户角色",
+                    "enum": [ "master", "admin", "user" ]
+                  },
+                  "status": {
+                    "description": "用户状态，有效(active)，封禁(inactive)",
+                    "enum": [ "active", "inactive" ]
+                  }
+                },
+                "required": [ "email", "name" ]
+              }
+          responses:
+            200:
+              body:
+                example: | 
+                  { 
+                      "id": "181216415",
+                      "userId": "1838478383",
+                      "name": "张成文", 
+                      "createdAt": "2012-05-03T21:39:11-07:00",
+                      "updatedAt": "2012-08-23T14:57:48-07:00",
+                      "role": "user",
+                      "status": "active"
+                  } 
+                schema: |
+                  {
+                    "$schema": "http://json-schema.org/draft-03/schema",
+                    "type": "object" ,
+                    "properties":  { 
+                      "id": {
+                        "description": "会话成员唯一标识码",
+                        "type": "string"
+                      },
+                      "userId": {
+                        "description": "用户唯一标识码",
+                        "type": "string"
+                      },
+                      "name": {
+                        "description": "会话成员名称",
+                        "type": "string"
+                      },
+                      "createdAt": {
+                        "description": "创建时间",
+                        "type": "date"
+                      },
+                      "updatedAt": {
+                        "description": "修改时间",
+                        "type": "date"
+                      },
+                      "role": {
+                        "description": "用户角色",
+                        "enum": [ "master", "admin", "user" ]
+                      },
+                      "status": {
+                        "description": "用户状态，有效(active)，封禁(inactive)",
+                        "enum": [ "active", "inactive" ]
+                      }
+                    } 
+                  }
+        delete:
+          description: |
+            删除会话成员。 
+          responses:
+            200: 
+              description: 确认成功删除会话成员.
+        
+  
+    /messages:
+      type: base
+      description: |
+        会话消息集 
+        
+        各类型消息Content内容建议：
+        1，type='text'
+          {text:'this is text'}
+        2, type='image'
+          {src:'*****',thumbnail:'*****'}
+        3, type='video'
+          {src:'*****',thumbnail:'****'}
+        4, type='audio'
+          {src:'*****',second:49}
+        ......
+          
+      get:
+        description: |
+          获取本会话消息列表.
+        queryParameters:
+          filter_term:
+            description: |
+              用来筛选本会话消息的参数。可以是消息内容。
+            type: string
+          limit:
+            description: 返回结果集的数量
+            type: integer
+            default: 100
+            maximum: 1000
+          offset:
+            description: 返回结果集的起点
+            type: integer
+            default: 0
+        responses:
+          200:
+            body:
+              example: |
+                {
+                    "total_count": 1,
+                    "entries": [
+                        { 
+                            "id": "181216415",
+                            "sender": "1838478383",
+                            "isDelete": false,
+                            "content": "这是一测试消息内容", 
+                            "createdAt": "2012-05-03T21:39:11-07:00",
+                            "updatedAt": "2012-08-23T14:57:48-07:00",
+                            "type": "text" 
+                        }
+                    ]
+                }
+              schema: |
+                {
+                  "$schema": "http://json-schema.org/draft-03/schema",
+                  "type": "object" ,
+                  "properties": {
+                    "total_count": {
+                      "type": "integer"
+                    },
+                    "entries": [
+                      {
+                        "properties": { 
+                          "id": {
+                            "description": "消息唯一标识码",
+                            "type": "string"
+                          },
+                          "sender": {
+                            "description": "发送者用户唯一标识码",
+                            "type": "string"
+                          },
+                          "content": {
+                            "description": "消息内容",
+                            "type": "string"
+                          },
+                          "isDelete": {
+                            "description": "如果为true, 表示服务器已删除了此实体，同步时请在客户端也删除",
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "description": "创建时间",
+                            "type": "date"
+                          },
+                          "updatedAt": {
+                            "description": "修改时间",
+                            "type": "date"
+                          },
+                          "type": {
+                            "description": "类型",
+                            "enum": [ "text", "image", "video", "audio", "file" ]
+                          } 
+                        },
+                        "type": "object"
+                      }
+                    ],
+                    "type": "array"
+                  }
+                }
+      post:
+        description: |
+          增加消息
+        body:
+          schema: |
+            {
+              "$schema": "http://json-schema.org/draft-03/schema",
+              "type": "object" ,
+              "properties": {
+                "sender": {
+                  "description": "发送者用户唯一标识码",
+                  "type": "string"
+                },
+                "content": {
+                  "description": "消息内容",
+                  "type": "string"
+                },
+                "type": {
+                  "description": "类型",
+                  "enum": [ "text", "image", "file" ]
+                } 
+              },
+              "required": [ "sender", "content" ]
+            }
+        responses:
+          201:
+            body:
+              example: |
+                { 
+                  "id": "181216415",
+                  "sender": "1838478383",
+                  "content": "这是一测试消息内容", 
+                  "createdAt": "2012-05-03T21:39:11-07:00",
+                  "updatedAt": "2012-08-23T14:57:48-07:00",
+                  "type": "text"  
+                }
+              schema: |
+                {
+                  "$schema": "http://json-schema.org/draft-03/schema",
+                  "type": "object" ,
+                  "properties":  { 
+                    "id": {
+                      "description": "消息唯一标识码",
+                      "type": "string"
+                    },
+                    "sender": {
+                      "description": "发送者用户唯一标识码",
+                      "type": "string"
+                    },
+                    "content": {
+                      "description": "消息内容",
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "description": "创建时间",
+                      "type": "date"
+                    },
+                    "updatedAt": {
+                      "description": "修改时间",
+                      "type": "date"
+                    },
+                    "type": {
+                      "description": "类型",
+                      "enum": [ "text", "image", "file" ]
+                    } 
+                  } 
+                }
+      /{messageId}:
+        type: base
+        description: |
+          会话消息
+        uriParameters:
+          messageId:
+            description: 消息唯一标识码
+            type: string
+        get:
+          description: |
+            获取消息.
+          responses:
+            200:
+              body:
+                example: |
+                  { 
+                    "id": "181216415",
+                    "sender": "1838478383",
+                    "content": "这是一测试消息内容", 
+                    "createdAt": "2012-05-03T21:39:11-07:00",
+                    "updatedAt": "2012-08-23T14:57:48-07:00",
+                    "type": "text"  
+                  }
+                schema: |
+                  {
+                    "$schema": "http://json-schema.org/draft-03/schema",
+                    "type": "object" ,
+                    "properties":  { 
+                      "id": {
+                        "description": "消息唯一标识码",
+                        "type": "string"
+                      },
+                      "sender": {
+                        "description": "发送者用户唯一标识码",
+                        "type": "string"
+                      },
+                      "content": {
+                        "description": "消息内容",
+                        "type": "string"
+                      },
+                      "createdAt": {
+                        "description": "创建时间",
+                        "type": "date"
+                      },
+                      "updatedAt": {
+                        "description": "修改时间",
+                        "type": "date"
+                      },
+                      "type": {
+                        "description": "类型",
+                        "enum": [ "text", "image", "file" ]
+                      } 
+                    } 
+                  }
+        put:
+          description: |
+            更新消息.
+          body:
+            schema: |
+              {
+                "$schema": "http://json-schema.org/draft-03/schema",
+                "type": "object" ,
+                "properties": {
+                  "sender": {
+                    "description": "发送者用户唯一标识码",
+                    "type": "string"
+                  },
+                  "content": {
+                    "description": "消息内容",
+                    "type": "string"
+                  },
+                  "type": {
+                    "description": "类型",
+                    "enum": [ "text", "image", "file" ]
+                  } 
+                },
+                "required": [ "sender", "content" ]
+              }
+          responses:
+            200:
+              body:
+                example: |
+                  { 
+                    "id": "181216415",
+                    "sender": "1838478383",
+                    "content": "这是一测试消息内容", 
+                    "createdAt": "2012-05-03T21:39:11-07:00",
+                    "updatedAt": "2012-08-23T14:57:48-07:00",
+                    "type": "text"  
+                  }
+                schema: |
+                  {
+                    "$schema": "http://json-schema.org/draft-03/schema",
+                    "type": "object" ,
+                    "properties":  { 
+                      "id": {
+                        "description": "消息唯一标识码",
+                        "type": "string"
+                      },
+                      "sender": {
+                        "description": "发送者用户唯一标识码",
+                        "type": "string"
+                      },
+                      "content": {
+                        "description": "消息内容",
+                        "type": "string"
+                      },
+                      "createdAt": {
+                        "description": "创建时间",
+                        "type": "date"
+                      },
+                      "updatedAt": {
+                        "description": "修改时间",
+                        "type": "date"
+                      },
+                      "type": {
+                        "description": "类型",
+                        "enum": [ "text", "image", "file" ]
+                      } 
+                    } 
+                  }
+        delete:
+          description: |
+            删除消息。 
+          responses:
+            200: 
+              description: 确认成功删除会话消息.
+         
+/attachments:
+  type: base
+  description: |
+    附件集 
+  post:
+    headers: 
+      Content-MD5?:
+        description: 文件的 SHA1 hash 值
+        type: string
+    description: |
+      新建会话
+    body:
+      schema: |
+        {
+          "$schema": "http://json-schema.org/draft-03/schema",
+          "type": "object" ,
+          "properties": { 
+            "fileName": {
+              "description": "文件名",
+              "type": "string"
+            }
+          },
+          "required": [ "fileName" ]
+        }
+    responses:
+      201:
+        body:
+          example: |
+            { 
+                "id": "181216415", 
+                "fileName": "png.jpg", 
+                "createdAt": "2012-05-03T21:39:11-07:00",
+                "updatedAt": "2012-08-23T14:57:48-07:00"
+            }
+          schema: |
+            {
+            	"$schema": "http://json-schema.org/draft-03/schema",
+            	"type": "object" ,
+            	"properties": {
+            		"id": {
+                      "description": "附件唯一标识码",
+                      "type": "string"
+                    },
+                    "fileName": {
+                      "description": "文件名称",
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "description": "创建时间",
+                      "type": "date"
+                    },
+                    "updatedAt": {
+                      "description": "修改时间",
+                      "type": "date"
+                    }
+            	}
+            }  
+      
+  /{attachmentId}:
+    type: base
+    description: |
+      附件
+    uriParameters:
+      attachmentId:
+        description: 附件唯一标识码
+        type: string 
+    get:
+      description: |
+        获取此附件信息.
+      responses:
+        200:
+          body:
+            example: |
+              {
+                "id": "181216415", 
+                "fileName": "png.jpg", 
+                "createdAt": "2012-05-03T21:39:11-07:00",
+                "updatedAt": "2012-08-23T14:57:48-07:00"
+              }
+            schema: |
+              {
+                "$schema": "http://json-schema.org/draft-03/schema",
+                "type": "object" ,
+                "properties": {
+                  "id": {
+                    "description": "附件唯一标识码",
+                    "type": "string"
+                  }, 
+                  "fileName": {
+                    "description": "文件名称",
+                    "type": "string"
+                  }, 
+                  "createdAt": {
+                    "description": "创建时间",
+                    "type": "date"
+                  },
+                  "updatedAt": {
+                    "description": "修改时间",
+                    "type": "date"
+                  }
+                }
+              }  
+       
+    delete:
+      description: |
+        删除附件。 
+      responses:
+        200: 
+          description: 确认成功删除会话.
+    /content:
+      type: base 
+      description: |
+         附件的字节流
+      get:
+        description: |
+          获取附件的字节流
+        responses:
+          200:
+            description: 字节流

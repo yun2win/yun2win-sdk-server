@@ -1,0 +1,202 @@
+var thenjs=require("thenjs");
+var UserConversationModel=require("../model/userConversation");
+var UserConversation=require("./userConversation");
+var config=require("../config");
+
+var UserConversations=function(user){
+    this.user=user;
+    this.list=null;
+};
+
+UserConversations.prototype.getList=function(clientTime,cb){
+
+    //支持单参数访问
+    if(clientTime && !cb) {
+        cb = clientTime;
+        clientTime=new Date(1900,1,1);
+    }
+
+    var that=this;
+    var lastConvrs=[];
+    var tobj=this;
+    thenjs()
+        .then(function(cont){
+            if(that.list)
+                return cont(null,that.list);
+
+            var clientId=that.user.users.client.id;
+            var userid=that.user.id;
+            UserConversationModel.getLatest(clientId,userid,100,function(error,objs){
+                if(that.list)
+                    return  cont(null,that.list);
+                that.list=[];
+                for(var i=0;i<objs.length;i++){
+                    that.list.push(new UserConversation(that,objs[i]));
+                }
+                cont(null,that.list);
+            });
+
+        })
+        //找出1个小时内有更新的会话
+        .then(function(cont){
+            var timeslip=new Date();
+            timeslip.setHours(timeslip.getHours()-config.session.userConvrKeepAlive);
+            tobj.timeslip=timeslip;
+            for(var i=0;i<that.list.length;i++){
+                var obj=that.list[i];
+                if(obj.updatedAt>clientTime)
+                    lastConvrs.push(obj);
+            }
+            cont();
+        })
+        .each(lastConvrs,function(cont,uc){
+            if(uc.updatedAt>tobj.timeslip || !uc.lastMessage)
+                return uc.refresh(cont);
+            cont();
+        })
+        .then(function(cont,list){
+            lastConvrs.sort(function(a,b){
+                return a.updatedAt- b.updatedAt;
+            });
+
+            cb(null,lastConvrs);
+        });
+
+};
+
+UserConversations.prototype.updateUserConversation=function(targetId,time,cb){
+    //Update....
+
+    var that=this;
+    thenjs()
+        .then(function(cont){
+            //如果已缓存了，找到
+            if(that.list){
+                for(var i=0;i<that.list.length;i++)
+                    if(that.list[i].targetId==targetId)
+                        return cont(null,that.list[i]);
+            }
+
+            //不在缓存里？那从数据库里找
+            thenjs()
+                .then(function(ct){
+                    UserConversationModel.getByTargetId(that.user.id,that.user.users.client.id,targetId,ct);
+                })
+                .then(function(ct,entity){
+                    if(!entity)
+                        return cont();
+
+                    var uc=new UserConversation(that,entity);
+                    if(that.list)
+                        that.list.push(uc);
+                    cont(null,uc);
+                })
+                .fail(function(ct,error){
+                    cont(error);
+                });
+        })
+        .then(function(cont,uc){
+            if(!uc)
+                cb();
+
+            uc.updateTime(time,cont);
+        })
+        .then(function(cont){
+            cb();
+        })
+        .fail(function(cont,error){
+            cb(error);
+        });
+
+};
+
+UserConversations.prototype.clearUnread=function(targetId){
+
+    var that=this;
+    if(that.list){
+        for(var i=0;i<that.list.length;i++)
+            if(that.list[i].targetId==targetId){
+                that.clearUnread();
+            }
+    }
+};
+
+UserConversations.prototype.addUserConversation=function(type,targetId,name,avatarUrl,top,cb){
+
+    if(typeof top=="function" && !cb){
+        cb=top;
+        top=false;
+    }
+
+    var that=this;
+    thenjs()
+        .then(function(cont){
+            UserConversationModel.save({
+                clientId:that.user.users.client.id,
+                ownerId:that.user.id,
+                targetId:targetId,
+                name:name,
+                type:type,
+                top:top,
+                avatarUrl:avatarUrl,
+                isDelete:false
+            },cont);
+        })
+        .then(function(cont,entity){
+            var uc=new UserConversation(that,entity);
+            if(that.list)
+                that.list.push(uc);
+            cb(null,uc);
+        })
+        .fail(function(cont,error){
+            cb(error);
+        });
+
+};
+
+UserConversations.prototype.updateCache=function(obj,cb){
+
+    var that=this;
+    if(!that.list)
+        return cb();
+
+    var uc=null;
+    for(var i=0;i<that.list.length;i++)
+        if(that.list[i].id==obj.id) {
+            uc = that.list[i];
+            break;
+        }
+
+    if(uc)
+        for(var index in obj)
+            uc[index]=obj[index];
+    uc.updatedAt=new Date();
+    uc.entity.updatedAt=new Date();
+
+    cb(null,uc);
+
+};
+
+UserConversations.prototype.get=function(id,cb){
+
+    if(this.list){
+        for(var i=0;i<this.list.length;i++){
+            if(this.list[i].id==id)
+                return cb(null,this.list[i]);
+        }
+    }
+
+    var that=this;
+    UserConversationModel.get(id,function(error,obj){
+        if(error)
+            return cb(error);
+        if(!obj)
+            return cb();
+
+        cb(null,new UserConversation(that,obj));
+    });
+
+};
+
+
+module.exports=UserConversations;
