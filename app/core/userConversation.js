@@ -12,7 +12,7 @@ var UserConversation=function(userConversations,entity){
 UserConversation.prototype.refresh=function(cb){
     //找到群组查看消息
     var that=this;
-    var tobj=this;
+    var tobj={};
     thenjs()
         .then(function(cont){
             that.getSession(cont);
@@ -89,7 +89,21 @@ UserConversation.prototype.toJson=function(){
         "avatarUrl": this.avatarUrl
     };
 };
+UserConversation.prototype.store=function(cb){
+    for(var index in this.entity)
+        this.entity[index]=this[index];
+    var that=this;
+    UserConversationModel.save(that.entity,function(error){
+        if(error)
+            return cont(error);
 
+        that.isDelete=true;
+        that.createdAt=that.entity.createdAt;
+        that.updatedAt=that.entity.updatedAt;
+
+        cb(null,that);
+    });
+};
 UserConversation.prototype.delete=function(cb){
     var that=this;
     thenjs()

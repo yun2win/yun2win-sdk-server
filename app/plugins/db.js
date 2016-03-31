@@ -9,7 +9,8 @@ var sequelize = new Sequelize(config.db.database, config.db.username, config.db.
         min: 1,
         idle: 10000
     },
-    logging:false
+    logging:false,
+    charset:"utf-8"
 });
 
 

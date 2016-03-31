@@ -1,16 +1,16 @@
 module.exports={
   db:{
-    host:"rdspl5y5rdhdfw8gxb2co.mysql.rds.aliyuncs.com",
-    database:"y2w_example",
-    username:"y2w_example",
-    password:"y2w_example",
-    dialect:"mysql"
+//    host:"rdspl5y5rdhdfw8gxb2co.mysql.rds.aliyuncs.com",
+//    database:"y2w_example",
+//    username:"y2w_example",
+//    password:"y2w_example",
+//    dialect:"mysql"
 
-//      host:"localhost",
-//      database:"yun2win",
-//      username:"root",
-//      password:"sa",
-//      dialect:"mysql"
+      host:"localhost",
+      database:"yun2win",
+      username:"root",
+      password:"sa",
+      dialect:"mysql"
   },
   client:{
       appKey:"oYO9MiBu9hzvWWhM",

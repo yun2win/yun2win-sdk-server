@@ -60,65 +60,6 @@ module.exports=function(router,oauth){
             }
         });
 
-        var busboy = new Busboy({ headers: req.headers });
-
-
-//        var form = new formidable.IncomingForm();
-//        //Formidable uploads to operating systems tmp dir by default
-//        form.uploadDir = "./img";       //set upload directory
-//        form.keepExtensions = true;     //keep file extension
-//        form.on('fileBegin', function(name, file) {
-//            console.log("form.on.fileBegin");
-//            console.log(name);
-//            console.log(file);
-//        });
-//        form.on('end', function() {
-//            console.log("form.on.end");
-//        });
-//
-//        form.on('field', function(name, value) {
-//            console.log("form.on.field:{name:"+name+",value:"+value+"}");
-//        });
-//        form.onPart = function(part) {
-//            console.log(part);
-//            part.addListener('data', function() {
-//                console.log("form.onPart.data");
-//            });
-//        }
-//        form.parse(req, function(err, fields, files) {
-//            res.writeHead(200, {'content-type': 'text/plain'});
-//            res.write('received upload:\n\n');
-//            console.log("form.bytesReceived");
-//            //TESTING
-//            console.log(files.fileUploaded);
-////            console.log("file size: "+JSON.stringify(files.fileUploaded.size));
-////            console.log("file path: "+JSON.stringify(files.fileUploaded.path));
-////            console.log("file name: "+JSON.stringify(files.fileUploaded.name));
-////            console.log("file type: "+JSON.stringify(files.fileUploaded.type));
-////            console.log("astModifiedDate: "+JSON.stringify(files.fileUploaded.lastModifiedDate));
-//
-//            //Formidable changes the name of the uploaded file
-//            //Rename the file to its original name
-//            if(files.fileUploaded)
-//            fs.rename(files.fileUploaded.path, './img/'+files.fileUploaded.name, function(err) {
-//                if (err)
-//                    throw err;
-//                console.log('renamed complete');
-//            });
-//            res.end();
-//        });
-//        var clientId=req.oauth.bearerToken.clientId;
-//        Srv.parse(req,function(error,obj){
-//            if(error)
-//                return next(error);
-//
-//            Srv.store(null,clientId,obj,function(error,obj){
-//                if(error)
-//                    return next(error);
-//
-//                res.json(obj);
-//            });
-//        });
 
     });
 

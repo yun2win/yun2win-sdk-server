@@ -60,8 +60,37 @@ UserConversations.prototype.getList=function(clientTime,cb){
             });
 
             cb(null,lastConvrs);
+        })
+        .fail(function(cont,error){
+            cb(error);
         });
 
+};
+
+UserConversations.prototype.getUserConversation=function(targetId,cb){
+    if(that.list){
+        for(var i=0;i<that.list.length;i++)
+            if(that.list[i].targetId==targetId)
+                return cont(null,that.list[i]);
+    }
+
+    //不在缓存里？那从数据库里找
+    thenjs()
+        .then(function(ct){
+            UserConversationModel.getByTargetId(that.user.id,that.user.users.client.id,targetId,ct);
+        })
+        .then(function(ct,entity){
+            if(!entity)
+                return cb();
+
+            var uc=new UserConversation(that,entity);
+            if(that.list)
+                that.list.push(uc);
+            cb(null,uc);
+        })
+        .fail(function(ct,error){
+            cb(error);
+        });
 };
 
 UserConversations.prototype.updateUserConversation=function(targetId,time,cb){
@@ -131,6 +160,22 @@ UserConversations.prototype.addUserConversation=function(type,targetId,name,avat
     var that=this;
     thenjs()
         .then(function(cont){
+            that.getUserConversation(targetId,cont);
+        })
+        .then(function(cont,uc){
+            if(uc){
+
+                if(uc.isDelete){
+                    uc.isDelete=false;
+                    uc.store(function(error){
+                        return cb(error,uc);
+                    });
+                }
+                else
+                   cb(null,uc);
+                return;
+            }
+
             UserConversationModel.save({
                 clientId:that.user.users.client.id,
                 ownerId:that.user.id,
