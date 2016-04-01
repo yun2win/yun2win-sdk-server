@@ -68,6 +68,7 @@ UserConversations.prototype.getList=function(clientTime,cb){
 };
 
 UserConversations.prototype.getUserConversation=function(targetId,cb){
+    var that=this;
     if(that.list){
         for(var i=0;i<that.list.length;i++)
             if(that.list[i].targetId==targetId)
