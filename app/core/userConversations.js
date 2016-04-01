@@ -72,7 +72,7 @@ UserConversations.prototype.getUserConversation=function(targetId,cb){
     if(that.list){
         for(var i=0;i<that.list.length;i++)
             if(that.list[i].targetId==targetId)
-                return cont(null,that.list[i]);
+                return cb(null,that.list[i]);
     }
 
     //不在缓存里？那从数据库里找
