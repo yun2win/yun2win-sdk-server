@@ -366,7 +366,6 @@ service.login=function(clientId,email,password,cb){
             var date=new Date();
             var hour=config.client.tokenPeriod;// 24*30;
             date.setHours(date.getHours()+hour);
-            //date.setMinutes(date.getMinutes()+1);
             oauth.saveAccessToken(token,clientId,date,user.id,function(error){
                 if(error)
                     return cont(error);

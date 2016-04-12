@@ -29,8 +29,6 @@ module.exports=function(router,oauth){
                 if(!session)
                     return cont("会话不存在！");
 
-
-
                 session.filterMembers(clientTime,limit,offset,cont);
             })
             .then(function(cont,obj){

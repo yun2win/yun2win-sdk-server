@@ -32,6 +32,7 @@ var init=function(app,oauth){
     require("./userSession")(router,oauth);
     require("./message")(router,oauth);
     require("./attachment")(router,oauth);
+    require("./emoji")(router,oauth);
     app.use('/v1', router);
 };
 

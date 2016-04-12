@@ -213,7 +213,11 @@ Session.prototype.setMember=function(obj,cb){
             });
         })
         .then(function(cont,member){
+
+            tobj.isNew=false;
+
             if(!member){
+                tobj.isNew=true;
                 that.addMember(obj.userId,function(error,ms){
                     if(error)
                         return cont(error);
@@ -229,16 +233,25 @@ Session.prototype.setMember=function(obj,cb){
             }
             else{
 
+                tobj.isNew=member.isDelete;
                 for(var index in obj)
                     member[index]=obj[index];
-                member.isDelete=false;
-                member.createdAt=new Date();
+                if(tobj.isNew) {
+                    member.isDelete = false;
+                    member.createdAt = new Date();
+                }
+                member.updatedAt=new Date();
                 member.store(cont);
             }
         })
         .then(function(cont,member){
             tobj.member=member;
+            //如果是新加入
+            if(!tobj.isNew)
+                return cb(null,tobj.member);
+
             that.systemMessage_memberAdd(null,member,cont);
+
         })
         .then(function(cont){
             that.autoUpdateName(cont)

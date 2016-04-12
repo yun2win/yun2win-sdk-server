@@ -73,8 +73,9 @@ service.parse=function(req,cb){
         if(!req.body[key] && ks[key])
             return cb({code:400,error:"Parameter error", message:key+"参数不存在！"});
 
-        if(req.body[key])
-            obj[key]=req.body[key];
+        if(req.body[key]!=undefined) {
+            obj[key] = req.body[key];
+        }
     }
     cb(null,obj);
 };
