@@ -363,6 +363,78 @@ Session.prototype.addMessage=function(uid,content,type,cb){
 
 };
 
+Session.prototype.setMessage=function(id,uid,content,type,cb){
+
+    var that=this;
+    //保存消息
+    var tobj=this;
+    thenjs()
+        .then(function(cont){
+            that.getMembers(cont)
+        })
+        .then(function(cont,list){
+            tobj.members=list;
+            for(var i=0;i<list.length;i++){
+                if(list[i].userId==uid)
+                    return cont();
+            }
+            cont("没有权限发送消息");
+        })
+        .then(function(cont,user){
+            var obj={
+                id:id,
+                clientId:that.sessions.client.id,
+                sessionId:that.id,
+                sender:uid,
+                content:content,
+                type:type,
+                isDelete:false
+            };
+            tobj.message=new Message(that,obj);
+            MessageModel.save(obj,cont);
+        })
+        .then(function(cont,obj){
+
+            for(var i=0;i<that.messages.length;i++){
+                var msg=that.messages[i];
+                if(msg.id==id){
+                    if(i==that.messages.length-1){
+                        if(i>0) {
+                            var l = that.messages[i - 1];
+                            that.lastMessage = {
+                                sender: l.sender,
+                                content: l.content,
+                                type: l.type,
+                                createdAt: l.createdAt
+                            };
+                        }
+                        else{
+                            that.lastMessage = {
+                                sender: uid,
+                                content: content,
+                                type: type,
+                                createdAt: msg.createdAt
+                            };
+                        }
+                    }
+                    msg.sender=uid;
+                    msg.content=content;
+                    msg.type=content;
+                    msg.updatedAt=new Date();
+                    break;
+                }
+            }
+
+            cont();
+        })
+        .then(function(cont){
+            cb(null,tobj.message);
+        })
+        .fail(function(cont,error){
+            cb(error);
+        });
+};
+
 Session.prototype.syncMessage=function(userId,timestamp,filter_term,limit,offset,cb){
 
     this._clearUnread(userId);

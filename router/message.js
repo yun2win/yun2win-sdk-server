@@ -126,20 +126,34 @@ module.exports=function(router,oauth){
     router.put("/sessions/:sessionId/messages/:messageId",oauth,function(req,res,next){
 
         var sessionId = req.params.sessionId;
-        var id = req.params.messageId;
-
+        var messageId = req.params.messageId;
         var clientId=req.oauth.bearerToken.clientId;
-        Srv.parse(req,function(error,obj){
-            if(error)
-                return next(error);
+        var tobj=this;
+        thenjs()
+            .then(function(cont){
+                clients.get(clientId,cont);
+            })
+            .then(function(cont,client){
+                client.sessions.get(sessionId,cont);
+            })
+            .then(function(cont,session){
+                if(!session)
+                    return cont("会话不存在！");
 
-            Srv.store(sessionId,id,clientId,obj,function(error,obj){
-                if(error)
-                    return next(error);
+                tobj.session=session;
+                parseParms(req,cont);
 
-                res.json(obj);
+            })
+            .then(function(cont,obj){
+                tobj.session.setMessage(messageId,obj.sender,obj.content,obj.type,cont);
+            })
+            .then(function(cont,obj){
+                res.json(obj.toJson());
+            })
+            .fail(function(cont,error){
+                next(error);
             });
-        });
+
     });
 
     router.delete("/sessions/:sessionId/messages/:messageId",oauth,function(req,res,next){

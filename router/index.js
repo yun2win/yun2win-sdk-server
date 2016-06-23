@@ -23,7 +23,6 @@ var init=function(app,oauth){
     });
 
 
-
     require("./user")(router,oauth);
     require("./contact")(router,oauth);
     require("./session")(router,oauth);
@@ -34,6 +33,7 @@ var init=function(app,oauth){
     require("./attachment")(router,oauth);
     require("./emoji")(router,oauth);
     app.use('/v1', router);
+
 };
 
 
