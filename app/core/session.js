@@ -419,7 +419,7 @@ Session.prototype.setMessage=function(id,uid,content,type,cb){
                     }
                     msg.sender=uid;
                     msg.content=content;
-                    msg.type=content;
+                    msg.type=type;
                     msg.updatedAt=new Date();
                     break;
                 }
