@@ -11,7 +11,7 @@ var Sessions=function(client){
 Sessions.prototype.get=function(id,cb){
 
     var that=this;
-    var tobj=this;
+    var tobj={};
     thenjs()
         .then(function(cont){
             that.cache.get(id,cont);
@@ -55,7 +55,7 @@ Sessions.prototype.getP2PSession=function(aUid,bUid,cb){
     var mark=this._parseMark(aUid,bUid);
 
     var that=this;
-    var tobj=this;
+    var tobj={};
     thenjs()
         .then(function(cont){
             that.cache.get(mark,cont);
@@ -129,7 +129,7 @@ Sessions.prototype.getSingleSession=function(uid,cb){
     var mark=uid;
 
     var that=this;
-    var tobj=this;
+    var tobj={};
     thenjs()
         .then(function(cont){
             that.cache.get(mark,cont);
