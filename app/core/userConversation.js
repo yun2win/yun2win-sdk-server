@@ -93,12 +93,13 @@ UserConversation.prototype.store=function(cb){
     for(var index in this.entity)
         this.entity[index]=this[index];
     var that=this;
+    //that.entity.updatedAt=new Date();
     UserConversationModel.save(that.entity,function(error){
         if(error)
             return cont(error);
 
-        that.isDelete=true;
-        that.createdAt=that.entity.createdAt;
+        //that.isDelete=true;
+        //that.createdAt=that.entity.createdAt;
         that.updatedAt=that.entity.updatedAt;
 
         cb(null,that);
@@ -106,6 +107,9 @@ UserConversation.prototype.store=function(cb){
 };
 UserConversation.prototype.delete=function(cb){
     var that=this;
+
+
+
     thenjs()
         .then(function(cont){
             that.getSession(cont);
@@ -113,16 +117,27 @@ UserConversation.prototype.delete=function(cb){
             //sessions.get(that.targetId,cont);
         })
         .then(function(cont,session){
-            session.getMemberByUserId(that.userId,function(error,member){
-                 cont(null,member);
-            });
-        })
-        .then(function(cont,member){
-            if(member)
-                member.markConvr(false,cont);
-            else
+
+            if(session) {
+                session.getMemberByUserId(that.userId, function (error, member) {
+                    if (error)
+                        return cont(error);
+                    if (member)
+                        member.markConvr(false, cont);
+                    else
+                        cont();
+                });
+            }
+            else{
                 cont();
+            }
         })
+        //.then(function(cont,member){
+        //    if(member)
+        //        member.markConvr(false,cont);
+        //    else
+        //        cont();
+        //})
         .then(function(cont){
             that.entity.isDelete=true;
             that.entity.createdAt=new Date();
@@ -156,11 +171,10 @@ UserConversation.prototype.getSession=function(cb){
         var uid=this.userConversations.user.id;
         return sessions.getP2PSession(uid,this.targetId,cb);
     }
-
     if(this.type=="group")
         return sessions.get(this.targetId,cb);
 
-    return cb("用户会话类型不支持");
+    return cb();
 
 };
 UserConversation.prototype.updateTime=function(time,cb){

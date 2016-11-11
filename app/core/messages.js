@@ -85,6 +85,4 @@ Messages.prototype.addMessage=function(uid,content,type,cb){
 };
 
 
-
-
 module.exports=Messages;

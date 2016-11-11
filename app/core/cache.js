@@ -18,6 +18,11 @@ Cache.prototype.get=function(key,cb){
     cb(null,v);
 };
 
+Cache.prototype.remove=function(key,cb){
+    delete this.obj[ke];
+    cb();
+};
+
 Cache.prototype.set=function(key,obj,cb){
     var o=this.obj[key];
 

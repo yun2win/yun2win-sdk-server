@@ -8,7 +8,7 @@ var UserConversations=function(user){
     this.list=null;
 };
 
-UserConversations.prototype.getList=function(clientTime,cb){
+UserConversations.prototype.getList=function(clientTime,filter_term,cb){
 
     //支持单参数访问
     if(clientTime && !cb) {
@@ -44,14 +44,20 @@ UserConversations.prototype.getList=function(clientTime,cb){
             tobj.timeslip=timeslip;
             for(var i=0;i<that.list.length;i++){
                 var obj=that.list[i];
-                if(obj.updatedAt>clientTime)
+                if(obj.type=="p2p" && obj.targetId==that.user.id)
+                    continue;
+                if(obj.updatedAt>=clientTime && (!filter_term || filter_term==obj.type))
                     lastConvrs.push(obj);
             }
             cont();
         })
         .each(lastConvrs,function(cont,uc){
             if(uc.updatedAt>tobj.timeslip || !uc.lastMessage)
-                return uc.refresh(cont);
+                return uc.refresh(function(error){
+                    if(error)
+                        console.log("userSession["+uc.id+"] refresh error:"+error)
+                    cont();
+                });
             cont();
         })
         .then(function(cont,list){
@@ -67,18 +73,18 @@ UserConversations.prototype.getList=function(clientTime,cb){
 
 };
 
-UserConversations.prototype.getUserConversation=function(targetId,cb){
+UserConversations.prototype.getUserConversation=function(type,targetId,cb){
     var that=this;
     if(that.list){
         for(var i=0;i<that.list.length;i++)
-            if(that.list[i].targetId==targetId)
+            if(that.list[i].targetId==targetId && that.list[i].type==type)
                 return cb(null,that.list[i]);
     }
 
     //不在缓存里？那从数据库里找
     thenjs()
         .then(function(ct){
-            UserConversationModel.getByTargetId(that.user.id,that.user.users.client.id,targetId,ct);
+            UserConversationModel.getByTargetId(that.user.id,that.user.users.client.id,type,targetId,ct);
         })
         .then(function(ct,entity){
             if(!entity)
@@ -94,8 +100,10 @@ UserConversations.prototype.getUserConversation=function(targetId,cb){
         });
 };
 
-UserConversations.prototype.updateUserConversation=function(targetId,time,cb){
+UserConversations.prototype.updateUserConversation=function(type,targetId,time,cb){
     //Update....
+    //console.log("UserConversations.prototype.updateUserConversation");
+    //console.log(this.user.id+'--'+type+'--'+targetId+'--'+time);
 
     var that=this;
     thenjs()
@@ -103,14 +111,14 @@ UserConversations.prototype.updateUserConversation=function(targetId,time,cb){
             //如果已缓存了，找到
             if(that.list){
                 for(var i=0;i<that.list.length;i++)
-                    if(that.list[i].targetId==targetId)
+                    if(that.list[i].targetId==targetId && that.list[i].type==type)
                         return cont(null,that.list[i]);
             }
 
             //不在缓存里？那从数据库里找
             thenjs()
                 .then(function(ct){
-                    UserConversationModel.getByTargetId(that.user.id,that.user.users.client.id,targetId,ct);
+                    UserConversationModel.getByTargetId(that.user.id,that.user.users.client.id,type,targetId,ct);
                 })
                 .then(function(ct,entity){
                     if(!entity)
@@ -153,6 +161,9 @@ UserConversations.prototype.clearUnread=function(targetId){
 
 UserConversations.prototype.addUserConversation=function(type,targetId,name,avatarUrl,top,cb){
 
+    //console.log("UserConversations.prototype.addUserConversation");
+    //console.log(this.user.id+'--'+type+'--'+targetId+'--'+name+'--'+avatarUrl+'--');
+
     if(typeof top=="function" && !cb){
         cb=top;
         top=false;
@@ -161,13 +172,17 @@ UserConversations.prototype.addUserConversation=function(type,targetId,name,avat
     var that=this;
     thenjs()
         .then(function(cont){
-            that.getUserConversation(targetId,cont);
+            that.getUserConversation(type,targetId,cont);
         })
         .then(function(cont,uc){
             if(uc){
 
                 if(uc.isDelete){
                     uc.isDelete=false;
+                    uc.type=type;
+                    uc.name=name;
+                    uc.targetId=targetId;
+                    uc.updatedAt=new Date();
                     uc.store(function(error){
                         return cb(error,uc);
                     });

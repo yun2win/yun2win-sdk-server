@@ -43,7 +43,7 @@ Obj.getList=function(ownerId,clientId,cb){
 
 Obj.getSessionMemberList=function(sessionId,clientId,clientTime,filter_term,limit,offset,cb){
     var that=this;
-    var where={sessionId:sessionId,clientId:clientId, updatedAt:{$gt:clientTime }};
+    var where={sessionId:sessionId,clientId:clientId, updatedAt:{$gte:clientTime }};
     if(filter_term)
         where.$or=[{userId:filter_term},{name:filter_term}];
 
@@ -73,7 +73,7 @@ Obj.getSessionMemberList=function(sessionId,clientId,clientTime,filter_term,limi
 };
 
 Obj.getSessionMember=function(sessionId,clientId,clientTime,id,cb){
-    this.find({where:{sessionId:sessionId,clientId:clientId,id:id,updatedAt:{$gt:clientTime }}}).then(function(obj){
+    this.find({where:{sessionId:sessionId,clientId:clientId,id:id,updatedAt:{$gte:clientTime }}}).then(function(obj){
         var result=obj;
         if(obj)
             result=db.checkId(obj.dataValues);

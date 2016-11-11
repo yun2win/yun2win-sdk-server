@@ -110,4 +110,12 @@ Users.prototype.delete=function(id,cb){
             cb(error);
         });
 };
+Users.prototype.search=function(email,cb){
+    var that=this;
+    UserModel.getByEmail(this.client.id,email,function(err,obj){
+        if(err || !obj)
+            return cb(err);
+        cb(null,new User(that,obj));
+    });
+};
 module.exports=Users;

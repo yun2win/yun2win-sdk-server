@@ -15,7 +15,8 @@ var init=function(app,oauth){
         res.header('Access-Control-Allow-Methods', 'PUT, POST, GET, DELETE, OPTIONS');
 
         if (req.method == 'OPTIONS') {
-            res.send(200);
+            console.log(req.originalUrl);
+            res.sendStatus(200);
         }
         else {
             next();
@@ -32,6 +33,7 @@ var init=function(app,oauth){
     require("./message")(router,oauth);
     require("./attachment")(router,oauth);
     require("./emoji")(router,oauth);
+    require("./records")(router,oauth);
     app.use('/v1', router);
 
 };

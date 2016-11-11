@@ -50,7 +50,7 @@ Obj.getList=function(ownerId,clientId,cb){
 
 Obj.getContactList=function(ownerId,clientId,clientTime,filter_term,limit,offset,cb){
     var that=this;
-    var where={ownerId:ownerId,clientId:clientId, updatedAt:{$gt:clientTime }};
+    var where={ownerId:ownerId,clientId:clientId, updatedAt:{$gte:clientTime }};
     if(filter_term)
         where.$or=[{name:filter_term},{email:filter_term}];
 
@@ -80,7 +80,7 @@ Obj.getContactList=function(ownerId,clientId,clientTime,filter_term,limit,offset
 };
 
 Obj.getContact=function(ownerId,clientId,clientTime,id,cb){
-    this.find({where:{ownerId:ownerId,clientId:clientId,id:id,updatedAt:{$gt:clientTime }}}).then(function(obj){
+    this.find({where:{ownerId:ownerId,clientId:clientId,id:id,updatedAt:{$gte:clientTime }}}).then(function(obj){
         var result=obj;
         if(obj)
             result=db.checkId(obj.dataValues);

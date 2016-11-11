@@ -25,7 +25,7 @@ module.exports=function(router,oauth){
                 client.users.get(userId,cont);
             })
             .then(function(cont,user){
-                user.userConversations.getList(clientTime,cont);
+                user.userConversations.getList(clientTime,filter_term,cont);
             })
             .then(function(cont,list){
                 var result={total_count:list.length,entries:[]};
@@ -40,7 +40,6 @@ module.exports=function(router,oauth){
             });
 
     });
-
     router.post("/users/:userId/userConversations",oauth,function(req,res,next){
         var userId = req.params.userId;
         var clientId=req.oauth.bearerToken.clientId;
@@ -68,7 +67,6 @@ module.exports=function(router,oauth){
                 next({code:400,message:error});
             });
     });
-
     router.get("/users/:userId/userConversations/:userConversationId",oauth,function(req,res,next){
         var userId = req.params.userId;
         var id = req.params.userConversationId;
@@ -85,7 +83,6 @@ module.exports=function(router,oauth){
         });
 
     });
-
     router.put("/users/:userId/userConversations/:userConversationId",oauth,function(req,res,next){
 
         var userId = req.params.userId;
@@ -130,7 +127,57 @@ module.exports=function(router,oauth){
             });
 
     });
+    router.put("/users/:userId/userConversations/:userConversationId/unread",oauth,function(req,res,next){
 
+        var userId = req.params.userId;
+        var id = req.params.userConversationId;
+
+        var clientId=req.oauth.bearerToken.clientId;
+
+        thenjs()
+            .then(function(cont){
+                clients.get(clientId,cont);
+            })
+            .then(function(cont,client){
+                client.users.get(userId,cont);
+            })
+            .then(function(cont,user){
+                user.userConversations.get(id,cont);
+            })
+            .then(function(cont,uc){
+                if(!uc)
+                    cont("uc not exist");
+
+                try {
+                    var unread = req.body.unread;
+                    unread = parseInt(unread+"");
+
+                    var remark=req.body.remark;
+                    remark=remark?remark:"提醒";
+
+                    uc.unread = unread;
+                    uc.updatedAt=new Date();
+                    uc.lastMessage={
+                        sender:'system',
+                        type:'text',
+                        content:JSON.stringify({text:remark})
+                    };
+                    uc.updateTime(new Date(),function(){});
+                    cont();
+                }
+                catch(ex){
+                    cont(ex);
+                }
+            })
+            .then(function(cont){
+
+                res.json({});
+            })
+            .fail(function(cont,error){
+                next({code:400,message:error});
+            });
+
+    });
     router.delete("/users/:userId/userConversations/:userConversationId",oauth,function(req,res,next){
         var userId = req.params.userId;
         var id = req.params.userConversationId;
@@ -167,7 +214,6 @@ module.exports=function(router,oauth){
 //            res.json(obj);
 //        });
     });
-
 
 };
 

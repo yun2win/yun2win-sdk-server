@@ -1,0 +1,26 @@
+﻿<div style="font-family: arial, '宋体', 'Hiragino Sans GB', 'Microsoft Yahei', '微软雅黑', \5b8b\4f53, Tahoma, Arial, Helvetica, STHeiti !important;">
+	<div class="lyy_mail" style="padding:30px 6%;  background:#f3f3f4; ">
+		<div class="box" style="background:#fff; border-bottom:solid 3px #e7eaec; ">  
+			<div class="header" style="height:6px; background:#1cc09f;">
+				<div class="p p1" style="float:left; width:12.5%; height:6px; background: #23c6c8; "></div>
+				<div class="p p2" style="float:left; width:12.5%; height:6px; background: #f8ac59; "></div>
+				<div class="p p3" style="float:left; width:12.5%; height:6px; background: #ed5565;"></div>
+				<div class="p p4" style="float:left; width:12.5%; height:6px; background: #2e3f4f;"></div>
+			</div>
+			<div class="logo" style="padding:30px; text-align:right; ">
+				<img src="http://master.liyueyun.com/Content/Images/mail_logo.png" />
+			</div>
+			<div class="cont" style="padding:30px; padding-top:5px;">
+				<h1 style="font-size:30px; font-weight:bold; color:#f8ac59; margin-top:0;">亲爱的用户，您好！</h1>
+				<div class="content" style="color:#333;">
+					<p>{Name}邀请您加入{SystemName},请通过以下网址同意:</p>
+					<p><a href="{Url}"  style="color: #23c6c8; text-decoration: underline;" >{Url}</a></p>
+					<p>请在24小时内点击该链接，您也可以将链接复制到浏览器地址栏访问</p>
+					<p>本邮件由系统自动发出，请勿直接回复！</p> 
+				</div>
+				<div class="bottom" style="padding:30px; padding-bottom:5px; margin-top:50px; text-align:center; line-height:30px; border-top:solid 1px #e7eaec;">
+				</div>
+			</div> 
+		</div>
+	</div>
+</div> 

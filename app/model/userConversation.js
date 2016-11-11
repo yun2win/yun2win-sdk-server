@@ -22,8 +22,8 @@ Obj.get=function(id,cb){
     });
 };
 
-Obj.getByTargetId=function(ownerId,clientId,targetId,cb){
-    this.find({where:{ownerId:ownerId,clientId:clientId,targetId:targetId}}).then(function(obj){
+Obj.getByTargetId=function(ownerId,clientId,type,targetId,cb){
+    this.find({where:{ownerId:ownerId,clientId:clientId,type:type,targetId:targetId}}).then(function(obj){
         var result=obj;
         if(obj)
             result=db.checkId(obj.dataValues);
@@ -53,7 +53,7 @@ Obj.getLatest=function(clientId,ownerId,limit,cb){
 
 Obj.getUserConversationList=function(ownerId,clientId,clientTime,filter_term,limit,offset,cb){
     var that=this;
-    var where={ownerId:ownerId,clientId:clientId,updatedAt:{$gt:clientTime}};
+    var where={ownerId:ownerId,clientId:clientId,updatedAt:{$gte:clientTime}};
     if(filter_term)
         where.$or=[{name:filter_term}];
 

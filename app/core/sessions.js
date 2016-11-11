@@ -6,6 +6,7 @@ var thenjs=require("thenjs");
 var Sessions=function(client){
     this.client=client;
     this.cache=new Cache();
+    this.locks={};
 };
 
 Sessions.prototype.get=function(id,cb){
@@ -21,14 +22,29 @@ Sessions.prototype.get=function(id,cb){
                 return cb(null,session);
             cont();
         })
+        .then(function(cont,session){
+            tobj.session=session;
+            if(that.locks[id]){
+                setTimeout(function(){
+                    that.get(id,cb);
+                },1000);
+            }
+            else{
+                that.locks[id]=true;
+                cont();
+            }
+        })
         .then(function(cont){
             SessionModel.get(id,cont);
         })
         .then(function(cont,g){
-            if(!g)
+            delete that.locks[id];
+            if(!g) {
+
                 return cont("群组不存在");
+            }
 
-
+            //console.log("get db session("+id+")"+ g.id);
             that.cache.get(id,function(error,obj){
                 if(!obj){
                     var u = new Session(that,g);
@@ -54,6 +70,7 @@ Sessions.prototype.get=function(id,cb){
 Sessions.prototype.getP2PSession=function(aUid,bUid,cb){
     var mark=this._parseMark(aUid,bUid);
 
+
     var that=this;
     var tobj={};
     thenjs()
@@ -77,6 +94,14 @@ Sessions.prototype.getP2PSession=function(aUid,bUid,cb){
             if(g)
                 return cont(null,new Session(that, g));
 
+            if(that.locks[mark]){
+                setTimeout(function(){
+                    that.getP2PSession(aUid,bUid,cb);
+                },1000);
+                return;
+            }
+
+            that.locks[mark]=true;
             //新建
             thenjs()
                 .then(function(cont){
@@ -103,15 +128,28 @@ Sessions.prototype.getP2PSession=function(aUid,bUid,cb){
                     tobj.session.systemMessage_memberAdd(null,null,cont);
                 })
                 .then(function(){
+                    delete that.locks[mark];
                     cont(null,tobj.session);
                 })
                 .fail(function(ct,error){
+                    delete that.locks[mark];
                     cont(error);
                 });
         })
         .then(function(cont,u){
             tobj.newSession = u;
-            that.cache.set(u.id, u, cont);
+            that.cache.get(u.id,function(error,uobj){
+
+                if(!uobj){
+                    that.cache.set(u.id, u, cont);
+                }
+                else{
+                    tobj.newSession = uobj;
+                    cont();
+                }
+
+            });
+
         })
         .then(function(cont){
             that.cache.set(mark,tobj.newSession.id,cont);
@@ -144,7 +182,7 @@ Sessions.prototype.getSingleSession=function(uid,cb){
         })
         //数据库找寻此群
         .then(function(cont){
-            SessionModel.getByMark(mark,cont);
+            SessionModel.getByMark(that.client.id,mark,cont);
         })
         //如果不存在，新建之
         .then(function(cont,g){
@@ -167,7 +205,7 @@ Sessions.prototype.getSingleSession=function(uid,cb){
                     SessionModel.save(entity,cont)
                 })
                 .then(function(cont,entity){
-                    cont(null,new Session(entity.dataValues));
+                    cont(null,new Session(that,entity));
                 })
                 .then(function(cont,session){
                     tobj.session=session;

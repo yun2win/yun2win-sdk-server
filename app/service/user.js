@@ -5,6 +5,9 @@ var utils=require("../utils");
 var oauth=require("./oauth");
 var config=require("../config");
 var pinyin=require("../plugins/pinyin");
+var clients=require("../core/clients");
+
+var SessionMemberModel=require("../model/sessionMember");
 
 var service={};
 //
@@ -231,6 +234,51 @@ service.get=function(clientId,id,clientTime,cb){
     });
 };
 
+service.setPassword=function(clientId,userId,oldpassword,password,cb){
+    if(!oldpassword)
+        return cb("旧密码不能为空!");
+    if(!password)
+        return cb("新密码不能为空!");
+
+    thenjs()
+        .then(function(cont){
+            User.getUser(clientId,new Date(1900,1,1),userId,cont);
+        })
+        .then(function(cont,user){
+
+            if(!user ){
+                cont("用户不存在！");
+                return;
+            }
+
+            if(oldpassword==config.client.appSerect)
+                return cont(null,user);
+
+            utils.md5(oldpassword,function(error,moldpassword) {
+                if(user.password!=moldpassword)
+                    return cont("原密码不正确");
+                cont(null, user);
+            });
+        })
+        //生成新Key,更新用户表
+        .then(function(cont,user){
+            utils.md5(password,function(error,mdpassword){
+                user.password=mdpassword;
+                User.save(user,function(err,obj){
+                    if(err || !obj)
+                        return cont(err);
+                    cont(null,obj);
+                });
+            });
+        })
+        .then(function(cont,user){
+            cb(null);
+        })
+        .fail(function(cont,error){
+            cb(error);
+        });
+};
+
 service.getList=function(clientId,clientTime,filter_term,limit,offset,cb){
     User.getUserList(clientId,clientTime,filter_term,limit,offset,function(error,obj){
         if(obj && obj.entries)
@@ -243,11 +291,11 @@ service.getList=function(clientId,clientTime,filter_term,limit,offset,cb){
 service.parse=function(req,cb){
     var attrs=["email","name","role","jobTitle","phone","address","status","avatarUrl"];
 
-
+    var ks={"email":1,"name":1};
     var obj={};
     for(var i=0;i<attrs.length;i++){
         var key=attrs[i];
-        if(!req.body[key])
+        if(!req.body[key] && ks[key])
             return cb({code:400,error:"Parameter error", message:key+"参数不存在！"});
 
         if(req.body[key])
@@ -297,7 +345,9 @@ service.delete=function(id,clientId,cb){
     });
 };
 
-service.register=function(clientId,email,name,password,avatarUrl,cb){
+service.register=function(clientId,email,name,password,avatarUrl,inviteKey,cb){
+
+    var tobj={};
     thenjs()
         .then(function(cont){
             User.getByEmail(clientId,email,cont);
@@ -332,9 +382,42 @@ service.register=function(clientId,email,name,password,avatarUrl,cb){
                 });
             });
         })
+
         .then(function(cont,user){
-            service.clear(user)
-            cb(null,user);
+            if(!inviteKey) {
+                service.clear(user);
+                cb(null, user);
+                return;
+            }
+            tobj.user=user;
+            cont();
+        })
+        //处理邀请
+        .then(function(cont){
+            SessionMemberModel.get(inviteKey,cont);
+        })
+        .then(function(cont,member){
+            if(!member)
+                return cont("无效的邀请码!");
+
+            var sessionId = member.sessionId;
+            clients.get(clientId,function(error,client){
+               client.sessions.get(sessionId,cont);
+            });
+        })
+        .then(function(cont,session){
+            if(!session)
+                return cont("无效的群!");
+
+
+            session.setMember({userId:tobj.user.id},cont);
+        })
+        .then(function(cont){
+            session.removeInvite(inviteKey,cont);
+        })
+        .then(function(){
+            service.clear(tobj.user);
+            cb(null, tobj.user);
         })
         .fail(function(cont,error){
             cb(error);
@@ -349,6 +432,11 @@ service.login=function(clientId,email,password,cb){
 
             if(!user ){
                 cont("用户不存在");
+                return;
+            }
+
+            if(user.isDelete || user.status=="inactive"){
+                cont("账号已停用");
                 return;
             }
 

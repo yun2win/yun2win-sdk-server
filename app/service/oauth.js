@@ -1,13 +1,13 @@
 var utils=require("../utils");
-
+var config=require("../config");
 var model = module.exports;
 
 
-var OAuthAccessTokensModel = require("./../model/oAuthAccessToken"), // mongoose.model('OAuthAccessTokens'),
-    OAuthRefreshTokensModel = require("./../model/oAuthRefreshToken"), // mongoose.model('OAuthRefreshTokens'),
-    OAuthClientsModel = require("./../model/app"), // mongoose.model('OAuthClients'),
-    OauthAuthCodeModel = require("./../model/oAuthAuthCode"),
-    OAuthUsersModel = require("./../model/user"); // mongoose.model('OAuthUsers');
+var OAuthAccessTokensModel = require("../model/OAuthAccessToken"), // mongoose.model('OAuthAccessTokens'),
+    OAuthRefreshTokensModel = require("../model/OAuthRefreshToken"), // mongoose.model('OAuthRefreshTokens'),
+    OAuthClientsModel = require("../model/app"), // mongoose.model('OAuthClients'),
+    OauthAuthCodeModel = require("../model/OAuthAuthCode"),
+    OAuthUsersModel = require("../model/user"); // mongoose.model('OAuthUsers');
 
 //
 // oauth2-server callbacks
@@ -20,6 +20,7 @@ model.getAccessToken = function (bearerToken, callback) {
 
 model.getClient = function (clientId, clientSecret, callback) {
     console.log('in getClient (clientId: ' + clientId + ', clientSecret: ' + clientSecret + ')');
+
 
     OAuthClientsModel.getByKey(clientId,function(error,app){
         if(error)

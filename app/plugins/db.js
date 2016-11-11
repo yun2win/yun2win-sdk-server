@@ -73,6 +73,7 @@ var checkId=function(obj){
     if(!obj)
         return obj;
     obj.id=obj.id+"";
+
     return obj;
 };
 module.exports={

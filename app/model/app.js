@@ -20,8 +20,11 @@ Obj.getByKey=function(key,cb){
         cb(null,{
             key:key,
             secret:config.client.appSerect,
-            redirect_uri:""
+            redirect_uri:"",
+            user:-1,
+            admin:true
         });
+        return;
     }
     cb(null);
 

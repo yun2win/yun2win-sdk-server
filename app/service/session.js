@@ -24,9 +24,9 @@ service.getList=function(clientId,clientTime,filter_term,limit,offset,cb){
 service.parse=function(req,rs,cb){
     if(!cb &&rs){
         cb=rs;
-        rs={type:1,name:1,avatarUrl:1};
+        rs={type:1};
     }
-    var attrs=["type","name","description","secureType","avatarUrl","nameChanged"];
+    var attrs=["type","name","description","secureType","avatarUrl","nameChanged","mark"];
 
     var obj={};
     for(var i=0;i<attrs.length;i++){

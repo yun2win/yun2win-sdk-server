@@ -31,7 +31,12 @@ Obj.getByMd5=function(md5,cb){
 };
 
 Obj.getAttachment=function(clientId,clientTime,id,cb){
-    this.find({where:{clientId:clientId,id:id,updatedAt:{$gt:clientTime }}}).then(function(obj){
+
+    var where={clientId:clientId,id:id,updatedAt:{$gte:clientTime }};
+    if(!clientId)
+        delete where.clientId;
+
+    this.find({where:where}).then(function(obj){
         var result=obj;
         if(obj)
             result=db.checkId(obj.dataValues);

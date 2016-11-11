@@ -50,7 +50,7 @@ Obj.getConversationList=function(clientId,clientTime,filter_term,limit,offset,cb
 };
 
 Obj.getConversation=function(clientId,clientTime,id,cb){
-    this.find({where:{clientId:clientId,id:id,updatedAt:{$gt:clientTime }}}).then(function(obj){
+    this.find({where:{clientId:clientId,id:id,updatedAt:{$gte:clientTime }}}).then(function(obj){
         var result=obj;
         if(obj)
             result=db.checkId(obj.dataValues);

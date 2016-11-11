@@ -81,6 +81,44 @@ module.exports=function(router,oauth){
 
     });
 
+    router.post("/sessions/:sessionId/members/invite",oauth,function(req,res,next){
+        var sessionId = req.params.sessionId;
+        var clientId=req.oauth.bearerToken.clientId;
+        var userId=req.oauth.bearerToken.userId;
+        var email=req.body.email;
+        var tobj={};
+        thenjs()
+            .then(function(cont){
+                clients.get(clientId,cont);
+            })
+            .then(function(cont,client){
+                client.sessions.get(sessionId,cont);
+            })
+            .then(function(cont,session){
+                if(!session)
+                    return cont("会话不存在！");
+
+                session.checkRight(userId,"Member_Invite",function(error){
+                    if(error)
+                        return cont(error);
+                    tobj.session=session;
+                    cont();
+                });
+            })
+            .then(function(cont){
+                var url="http://"+ req.headers.host+"/acceptInvite?email="+email ;
+
+                tobj.session.invite(userId,email,url,cont);
+            })
+            .then(function(cont,member){
+                res.json(member.toJson());
+            })
+            .fail(function(cont,error){
+                next(error);
+            });
+
+    });
+
     router.get("/sessions/:sessionId/members/:memberId",oauth,function(req,res,next){
         var sessionId = req.params.sessionId;
         var id = req.params.memberId;
@@ -182,9 +220,28 @@ module.exports=function(router,oauth){
                 tobj.session.checkRight(userId,right,function(error){
                     if(error)
                         return cont(error);
-
-                    member.delete(cont);
+                    cont(null,member);
                 });
+            })
+            .then(function(cont,member){
+                tobj.member=member;
+                if(member.role=="master"){
+
+                    tobj.session.getMembers(function(error,ms){
+                        for(var i=0;i<ms.length;i++){
+                            if(ms[i].id!=member.id){
+                                tobj.session.moveMasterRole(member,ms[i],cont);
+                                return;
+                            }
+                        }
+                        cont();
+                    });
+                    return;
+                }
+                cont();
+            })
+            .then(function(cont,member){
+                tobj.member.delete(cont);
             })
             .then(function(){
                 res.json();
@@ -207,7 +264,7 @@ module.exports=function(router,oauth){
                 obj[key]=req.body[key];
         }
         cb(null,obj);
-    }
+    };
 
 };
 

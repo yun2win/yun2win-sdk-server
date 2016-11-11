@@ -13,12 +13,13 @@ var Message=function(session,entity){
 Message.prototype.toJson=function(){
     return {
         id:this.id,
+        sessionId:this.sessionId,
         type:this.type,
         sender:this.sender,
         content:this.content,
         createdAt:this.createdAt,
         updatedAt:this.updatedAt
     };
-}
+};
 
 module.exports=Message;

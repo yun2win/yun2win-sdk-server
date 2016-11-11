@@ -65,7 +65,7 @@ service.getList=function(ownerId,clientId,clientTime,filter_term,limit,offset,cb
 
 service.parse=function(req,cb){
     var attrs=["targetId","name","type","top","avatarUrl"];
-    var ks={"targetId":1,"name":1,"type":1,"avatarUrl":1};
+    var ks={"targetId":1,"name":1,"type":1,"avatarUrl":0};
 
     var obj={};
     for(var i=0;i<attrs.length;i++){
@@ -77,6 +77,11 @@ service.parse=function(req,cb){
             obj[key] = req.body[key];
         }
     }
+
+    if(obj.top && typeof obj.top=="string"){
+        obj.top=obj.top.toLowerCase()=="true";
+    }
+
     cb(null,obj);
 };
 

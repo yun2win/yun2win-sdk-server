@@ -29,7 +29,7 @@ module.exports=function(router,oauth){
         var bUserId = req.params.bUserId;
         var clientId=req.oauth.bearerToken.clientId;
 
-        var tobj=this;
+        var tobj={};
         thenjs()
             .then(function(cont){
                 clients.get(clientId,cont);
@@ -150,13 +150,20 @@ module.exports=function(router,oauth){
                 if(!session)
                     return cont("会话不存在！");
 
-                //判断权限
-                session.checkRight(userId,"Session_Edit",function(error){
-                    if(error)
-                        return cont(error);
+                if(userId<=0){
                     tobj.session=session;
                     Srv.parse(req,{},cont);
-                });
+                }
+                else{
+                    //判断权限
+                    session.checkRight(userId,"Session_Edit",function(error){
+                        if(error)
+                            return cont(error);
+                        tobj.session=session;
+                        Srv.parse(req,{},cont);
+                    });
+                }
+
             })
             .then(function(cont,obj){
                 for(var index in obj)

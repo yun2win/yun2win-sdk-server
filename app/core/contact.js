@@ -36,6 +36,7 @@ Contact.prototype.toJson=function(){
         userId:this.userId,
         name:this.name,
         title:this.title,
+        email:this.email,
         createdAt:this.createdAt,
         updateAt:this.updateAt,
         avatarUrl:this.avatarUrl,

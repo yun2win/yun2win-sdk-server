@@ -23,12 +23,11 @@ service.getList=function(ownerId,clientId,clientTime,filter_term,limit,offset,cb
 
 service.parse=function(req,cb){
     var attrs=["userId","name","avatarUrl"];
-
-
+    var ks={"userId":1,"name":1};
     var obj={};
     for(var i=0;i<attrs.length;i++){
         var key=attrs[i];
-        if(!req.body[key])
+        if(!req.body[key] && ks[key])
             return cb({code:400,error:"Parameter error", message:key+"参数不存在！"});
 
         if(req.body[key])

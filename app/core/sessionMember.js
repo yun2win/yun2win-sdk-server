@@ -22,9 +22,15 @@ SessionMember.prototype.markConvr=function(has,cb){
 };
 
 SessionMember.prototype.checkUserConversation=function(timestamp,cb){
+
+    if(this.status=="inactive")
+        return cb();
+
     //如果不存在用户会话，则增加
-    if(this.hasConvr)
+    if(this.hasConvr && this.setConvring)
        return cb();
+
+    this.setConvring=true;
 
     var users=this.session.sessions.client.users;
     var that=this;
@@ -75,6 +81,8 @@ SessionMember.prototype.checkUserConversation=function(timestamp,cb){
 };
 
 SessionMember.prototype.updateUserConversation=function(date,cb){
+    if(this.status=="inactive")
+        return cb();
     //更新会话时间
 
     //找到用户会话
@@ -91,7 +99,7 @@ SessionMember.prototype.updateUserConversation=function(date,cb){
             that.getCvTargetId(cont);
         })
         .then(function(cont,targetId){
-            tobj.user.userConversations.updateUserConversation(targetId,date,cont);
+            tobj.user.userConversations.updateUserConversation(session.type,targetId,date,cont);
         })
         .then(function(cont){
             cb();
@@ -103,6 +111,10 @@ SessionMember.prototype.updateUserConversation=function(date,cb){
 };
 
 SessionMember.prototype.clearUnread=function(cb){
+
+    if(this.unread<=0)
+        return cb(null,false);
+
     this.unread=0;
     var tobj={};
     var users=this.session.sessions.client.users;
@@ -117,9 +129,23 @@ SessionMember.prototype.clearUnread=function(cb){
         })
         .then(function(cont,targetId){
             tobj.user.userConversations.clearUnread(targetId);
+            cont();
         })
         .then(function(cont){
-            cb();
+            var date=new Date();
+            that.entity.lastReadTime=date;
+            that.entity.updatedAt=date;
+            SessionMemberModel.update(that.entity,["lastReadTime","updatedAt"],function(error){
+                if(error)
+                    console.error("clearUnread error:"+error);
+
+                that.lastReadTime=that.entity.lastReadTime;
+                that.updatedAt=that.entity.updatedAt;
+                cont();
+            });
+        })
+        .then(function(cont){
+            cb(null,true);
         })
         .fail(function(cont,error){
             cb(error);
@@ -160,7 +186,7 @@ SessionMember.prototype.getCvTargetId=function(cb){
         that.target=session.id;
         cb(null,session.id);
     }
-}
+};
 
 SessionMember.prototype.store=function(cb){
 
@@ -176,10 +202,30 @@ SessionMember.prototype.store=function(cb){
 
 };
 
+SessionMember.prototype.updateRole=function(cb){
+
+    var that=this;
+    this.entity.role=this.role;
+    var date=new Date();
+    this.entity.updatedAt=date;
+    this.entity.createdAt=date;
+    SessionMemberModel.update(that.entity,["role","createdAt","updatedAt"],function(error){
+        if(error)
+            return cb(error);
+
+        that.role=that.entity.role;
+        that.updatedAt=that.entity.updatedAt;
+        that.createdAt=that.entity.createdAt;
+        that.session.updateTime(cb);
+        //cb();
+    });
+};
+
 SessionMember.prototype.delete=function(cb){
     var date=new Date();
     this.entity.isDelete=true;
-    this.entity.role="user";
+    if(["master","admin"].indexOf(this.entity.role)>=0)
+        this.entity.role="user";
     this.entity.updatedAt=date;
     this.entity.createdAt=date;
     var that=this;
@@ -204,6 +250,8 @@ SessionMember.prototype.delete=function(cb){
             });
         })
         .then(function(cont){
+            if(that.status=="inactive")
+                return cont();
             that.session.systemMessage_memberLeave(null,that,cont);
         })
         .then(function(cont){
@@ -224,7 +272,9 @@ SessionMember.prototype.delete=function(cb){
 
 SessionMember.prototype.toJson=function(){
     var obj=this;
-    return {
+
+
+    var json= {
         "id": obj.id,
         "name": obj.name,
         "pinyin": pinyin(obj.name),
@@ -237,6 +287,14 @@ SessionMember.prototype.toJson=function(){
         lastReadTime:obj.lastReadTime,
         isDelete:obj.isDelete
     };
+
+    if(obj.role=='email'){
+        json.time=json.avatarUrl;
+        json.avatarUrl='';
+    }
+
+
+    return json;
 };
 
 

@@ -1,6 +1,7 @@
 var thenjs=require("thenjs");
 var SesssionModel=require("../model/session");
 var SessionMemberModel=require("../model/sessionMember");
+var userSession=require("../model/userSession");
 var SessionMember=require("./sessionMember");
 
 var Message=require("./message");
@@ -8,6 +9,7 @@ var Messages=require("./messages");
 var MessageModel=require("../model/message");
 
 var config=require("../config");
+var emailer=require("../plugins/mail");
 
 var Session=function(sessions,entity){
     this.rid=Math.floor(Math.random()*10000);
@@ -97,6 +99,7 @@ Session.prototype.getMembers=function(cb){
         return;
     }
 
+    //console.log("Session.prototype.getMembers:"+this.id);
     that.getMembering=true;
     SessionMemberModel.getList(this.id,this.clientId,function(error,list){
         that.getMembering=false;
@@ -111,6 +114,26 @@ Session.prototype.getMembers=function(cb){
     });
 };
 
+Session.prototype.moveMasterRole=function(from,to,cb){
+
+    var tobj=this;
+    thenjs()
+        .then(function(cont){
+            from.role="user";
+            from.updateRole(cont);
+        })
+        .then(function(cont){
+            to.role="master";
+            to.updateRole(cont)
+        })
+        .then(function(){
+            cb();
+        })
+        .fail(function(cont,error){
+            cb(error);
+        });
+};
+
 Session.prototype.filterMembers=function(timestamp,limit,offset,cb){
     var that=this;
     thenjs()
@@ -120,7 +143,7 @@ Session.prototype.filterMembers=function(timestamp,limit,offset,cb){
         .then(function(cont,list){
             var result=[];
             for(var i=0;i<list.length;i++){
-                if(list[i].updatedAt>timestamp)
+                if(list[i].updatedAt>=timestamp)
                     result.push(list[i]);
             }
             result.sort(function(a,b){
@@ -138,8 +161,11 @@ Session.prototype.filterMembers=function(timestamp,limit,offset,cb){
 
 Session.prototype.addMember=function(uids,cb){
 
+
     if(typeof uids =="string")
         uids=[uids];
+
+
 
     var that=this;
     var ms=[];
@@ -194,6 +220,8 @@ Session.prototype.addMember=function(uids,cb){
 Session.prototype.setMember=function(obj,cb){
     if(!obj.userId)
         return cb("UserId不存在");
+
+    //console.log("setmember:"+obj.userId);
 
     var that=this;
     var tobj={};
@@ -266,9 +294,20 @@ Session.prototype.setMember=function(obj,cb){
         });
 };
 
-Session.prototype.addMessage=function(uid,content,type,cb){
-
+Session.prototype.addMessage=function(uid,content,type,cb,second){
     var that=this;
+
+    if(that.messaging && (second>0 || second==undefined)){
+        console.log("that.messaging && (second>0 || second==undefined)");
+        second=second?second:5;
+        setTimeout(function(){
+            that.addMessage(uid,content,type,cb,second--);
+        },500);
+        return;
+    }
+
+
+    that.messaging=true;
     //保存消息
     var tobj={};
     thenjs()
@@ -285,6 +324,7 @@ Session.prototype.addMessage=function(uid,content,type,cb){
                     return cont();
                 }
             }
+
             //系统和空用户有权限发消息
             if(uid=="system" || !uid)
                 return cont();
@@ -321,8 +361,9 @@ Session.prototype.addMessage=function(uid,content,type,cb){
             //标注有新消息
             for(var i=0;i<tobj.members.length;i++){
                 var m=tobj.members[i];
-                if(m.userId!=uid)
-                    m.unread=(m.unread||0)+1;
+                if(m.userId!=uid) {
+                    m.unread = (m.unread || 0) + 1;
+                }
             }
 
             var lastDate=that.messageUpdatedAt || new Date(1900,1,1);
@@ -337,7 +378,7 @@ Session.prototype.addMessage=function(uid,content,type,cb){
 
             //如果消息发送间隔1个小时(config.session.userConvrKeepAlive)以上，需要所有会话都更新一次
             thenjs()
-                .each(tobj.members,function(cont,member){
+                .eachSeries(tobj.members,function(cont,member){
                     //此群成员被删除，不用更新会话
                     if(member.isDelete)
                         return cont();
@@ -355,9 +396,11 @@ Session.prototype.addMessage=function(uid,content,type,cb){
                 });
         })
         .then(function(cont){
+            that.messaging=false;
             cb(null,tobj.message);
         })
         .fail(function(cont,error){
+            that.messaging=false;
             cb(error);
         });
 
@@ -388,16 +431,18 @@ Session.prototype.setMessage=function(id,uid,content,type,cb){
                 sender:uid,
                 content:content,
                 type:type,
-                isDelete:false
+                isDelete:false,
+                updatedAt:new Date()
             };
             tobj.message=new Message(that,obj);
             MessageModel.save(obj,cont);
         })
         .then(function(cont,obj){
 
+            var updated=false;
             for(var i=0;i<that.messages.length;i++){
                 var msg=that.messages[i];
-                if(msg.id==id){
+                if(msg.id==tobj.message.id){
                     if(i==that.messages.length-1){
                         if(i>0) {
                             var l = that.messages[i - 1];
@@ -420,9 +465,16 @@ Session.prototype.setMessage=function(id,uid,content,type,cb){
                     msg.sender=uid;
                     msg.content=content;
                     msg.type=type;
-                    msg.updatedAt=new Date();
+                    msg.updatedAt=tobj.message.updatedAt;
+                    tobj.message.createdAt=msg.createdAt;
+                    updated=true;
                     break;
                 }
+            }
+
+            if(!updated){
+                //TODO
+                that.messages.push(tobj.message);
             }
 
             cont();
@@ -438,6 +490,7 @@ Session.prototype.setMessage=function(id,uid,content,type,cb){
 Session.prototype.syncMessage=function(userId,timestamp,filter_term,limit,offset,cb){
 
     this._clearUnread(userId);
+    timestamp.setMilliseconds(timestamp.getMilliseconds()+1);
 
     var that=this;
     this.getMemberByUserId(userId,function(error,member){
@@ -526,6 +579,14 @@ Session.prototype.historyMessage=function(userId,timestamp,limit,offset,cb){
 Session.prototype.store=function(cb){
 
     var that=this;
+
+    //更新收藏
+    if(this.name!=this.entity.name || this.avatarUrl!=this.entity.avatarUrl){
+        var name=this.name!=this.entity.name?this.name:null;
+        var avatarUrl=this.avatarUrl!=this.entity.avatarUrl?this.avatarUrl:null;
+        userSession.updateNameOrAvatarUrl(this.sessions.client.id,this.id,name,avatarUrl,function(){});
+    }
+
     for(var index in this.entity)
         this.entity[index]=this[index];
     SesssionModel.save(this.entity,function(error,obj){
@@ -599,6 +660,7 @@ Session.prototype.autoUpdateName=function(cb){
 Session.prototype.systemMessage_memberAdd=function(uid,member,cb){
     //如果是p2p，则第2个人时才发消息
 
+    //console.log("systemMessage_memberAdd:"+uid+"_"+(member.name||"有人"));
     uid=uid||"system";
 
     var that=this;
@@ -608,8 +670,8 @@ Session.prototype.systemMessage_memberAdd=function(uid,member,cb){
                 return cb();
             if (list.length != 2)
                 return cb();
-            that.addMessage(uid,JSON.stringify({"text":"你们现在可以开始聊天了。"}),"system",cb);
-        })
+            that.addMessage(uid,JSON.stringify({"text":"你们现在可以开始交流了。"}),"system",cb);
+        });
     }
     else if(that.type=="group"){
         that.addMessage(uid,JSON.stringify({"text":(member.name||"有人")+"加入群聊"}),"system",cb);
@@ -619,6 +681,7 @@ Session.prototype.systemMessage_memberAdd=function(uid,member,cb){
     }
 
 };
+
 Session.prototype.systemMessage_memberLeave=function(uid,member,cb){
     var that=this;
     uid=uid||"system";
@@ -662,14 +725,22 @@ Session.prototype._clearUnread=function(userId){
         if(error)
             return;
 
-        member.clearUnread(function(error){
+        member.clearUnread(function(error,clearSuccess){
             if(error)
                 console.error(error);
+
+            if(clearSuccess) {
+                that.updatedAt = new Date();
+                that.entity.updatedAt=new Date();
+            }
         });
     });
 };
 
 Session.prototype.checkRight=function(uid,right,cb){
+
+    if(uid=="-1")
+        return cb();
 
     var that=this;
     thenjs()
@@ -701,6 +772,7 @@ Session.prototype.checkRight=function(uid,right,cb){
                 case "Member_Delete_Self":
                 case "Member_Add":
                 case "Member_Edit":
+                case "Member_Invite":
                 //case "Member_Edit_Self":
                     can=true;
                     break;
@@ -715,6 +787,117 @@ Session.prototype.checkRight=function(uid,right,cb){
             cb(error);
         })
 
+};
+
+Session.prototype.invite=function(userId,email,url,cb){
+
+    var users=this.sessions.client.users;
+    var that=this;
+    var tobj={};
+    thenjs()
+        .then(function(cont){
+            users.search(email,cont);
+        })
+        .then(function(cont,user){
+            //如果找到这个用户,直接增加
+            if(user){
+                return that.setMember({userId:user.id},cb);
+            }
+            cont();
+        })
+        .then(function(cont){
+            that.getMembers(cont);
+        })
+        .then(function(cont,list){
+            for(var i=0;i<list.length;i++)
+                if(list[i].userId==email && list[i].role=='email'){
+                    var member=list[i];
+                    member.avatarUrl=member.avatarUrl==''?'2':(parseInt(member.avatarUrl)+1)+'';
+                    member.updatedAt=new Date();
+                    member.isDelete=false;
+                    member.store(function(){
+                        that.sendInviteEmail(userId,email,url+'&key='+member.id,function(){
+                            cb(null,member)
+                        });
+                    });
+                    return ;
+                }
+
+            cont();
+        })
+        .then(function(cont){
+            if( /^([a-zA-Z0-9_-])+@([a-zA-Z0-9_-])+((\.[a-zA-Z0-9_-]{2,3}){1,2})$/.test(email)){
+
+                var name=email;
+                name=name.substr(0,name.indexOf("@"));
+
+                var entity={
+                    clientId:that.sessions.client.id,
+                    userId:email,
+                    sessionId:that.id,
+                    name:name,
+                    avatarUrl:'1',
+                    role:"email",
+                    status:"inactive",
+                    hasConvr:false,
+                    lastReadTime:new Date(),
+                    isDelete:false
+                };
+                SessionMemberModel.save(entity,cont);
+            }
+            else{
+                cb("必须是正确的邮件地址!");
+            }
+        })
+        .then(function(cont,obj){
+            var member=new SessionMember(that,obj);
+            that.list.push(member);
+            that.sendInviteEmail(userId,email,url+'&key='+member.id,function() {
+                cb(null, member);
+            });
+        })
+        .fail(function(cont,error){
+            cb(error);
+        });
+};
+Session.prototype.removeInvite=function(id,cb){
+
+    var that=this;
+    var tobj={};
+
+    thenjs()
+        .then(function(cont){
+            that.getMember(id,cont);
+        })
+        .then(function(cont,member){
+            member.delete();
+        })
+        .fail(function(error){
+            cb(error);
+        });
+};
+Session.prototype.sendInviteEmail=function(userId,email,url,cb){
+
+    var users=this.sessions.client.users;
+    thenjs()
+        .then(function(cont){
+            users.get(userId,cont);
+        })
+        .then(function(cont,user){
+            if(!user)
+                return cont("邀请人不存在!");
+
+            var systemName=config.systemName;
+            var uname=user.name;
+            emailer.sendTemplate(email,uname+"邀请您加入"+systemName,"invite",{
+                SystemName:systemName,
+                Name:uname,
+                Url:url
+            },cb);
+        })
+        .fail(function(cont,error){
+            cb(error);
+        });
 };
 
 module.exports=Session;

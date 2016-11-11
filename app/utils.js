@@ -21,10 +21,15 @@ utils.each=function(array,action){
 };
 
 utils.md5=function(content,cb){
-    var md5 = crypto.createHash('md5');
-    md5.update(content);
-    var d = md5.digest('hex');
-    cb(null,d);
+    try {
+        var md5 = crypto.createHash('md5');
+        md5.update(content);
+        var d = md5.digest('hex');
+        cb(null, d);
+    }
+    catch(ex){
+        cb(ex);
+    }
 };
 
 utils.parseDate=function(str){
@@ -41,5 +46,28 @@ utils.parseDate=function(str){
         return null;
     }
 };
+
+utils.encodeUTF8=function(str){
+    var reg=/[\ud000-\uffff]/;
+    var temp = "",rs = "";
+    for( var i=0 , len = str.length; i < len; i++ ){
+        var key=str[i]+"";
+        if(!reg.test(key)){
+            rs+=key;
+        }
+        else {
+            temp = str.charCodeAt(i).toString(16);
+            rs += "\\u" + new Array(5 - temp.length).join("0") + temp;
+        }
+    }
+    //console.log(str+":==="+rs);
+    return rs;
+};
+utils.decodeUTF8=function(str){
+    return str.replace(/(\\u)(\w{4}|\w{2})/gi, function($0,$1,$2){
+        return String.fromCharCode(parseInt($2,16));
+    });
+};
+
 
 module.exports=utils;

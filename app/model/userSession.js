@@ -22,7 +22,7 @@ Obj.get=function(id,cb){
 
 Obj.getUserSessionList=function(ownerId,clientId,clientTime,filter_term,limit,offset,cb){
     var that=this;
-    var where={owner:ownerId,clientId:clientId, updatedAt:{$gt:clientTime }};
+    var where={owner:ownerId,clientId:clientId, updatedAt:{$gte:clientTime }};
     if(filter_term)
         where.$or=[{name:filter_term},{sessionId:filter_term}];
 
@@ -52,13 +52,37 @@ Obj.getUserSessionList=function(ownerId,clientId,clientTime,filter_term,limit,of
 };
 
 Obj.getUserSession=function(ownerId,clientId,clientTime,id,cb){
-    this.find({where:{ownerId:ownerId,clientId:clientId,id:id,updatedAt:{$gt:clientTime }}}).then(function(obj){
+    this.find({where:{ownerId:ownerId,clientId:clientId,id:id,updatedAt:{$gte:clientTime }}}).then(function(obj){
         var result=obj;
         if(obj)
             result=db.checkId(obj.dataValues);
         if(cb)
             cb(null,result);
     });
+};
+
+Obj.updateNameOrAvatarUrl=function(clientId,sessionId,name,avatarUrl,cb){
+
+    if(!name && !avatarUrl)
+        return cb();
+
+    var where={clientId:clientId,sessionId:sessionId};
+
+    var keys=[];
+    var obj={};
+    if(name) {
+        obj.name = name;
+        keys.push("name");
+    }
+    if(avatarUrl) {
+        obj.avatarUrl = avatarUrl;
+        keys.push("avatarUrl");
+    }
+    this._update(obj, {where:where}).then(function(obj){
+        if(cb)
+            cb(null,obj);
+    });
+
 };
 
 module.exports=Obj;

@@ -7,8 +7,6 @@ var Busboy=require("busboy");
 
 module.exports=function(router,oauth){
 
-
-
     router.post("/attachments",oauth,function(req,res,next){//oauth,
         var clientId=req.oauth.bearerToken.clientId;
         var md5=req.get("Content-MD5");
@@ -24,7 +22,7 @@ module.exports=function(router,oauth){
                 path=Srv.createPath();
                 var busboy = new Busboy({ headers: req.headers });
                 busboy.on('file', function(fieldname, file, filename, encoding, mimetype) {
-                    fileName=filename;
+                    fileName= decodeURIComponent(filename) ;
                     size=file.size;
                     var saveTo = Path.join(__dirname, ".."+path);
 
@@ -51,18 +49,37 @@ module.exports=function(router,oauth){
                 path=obj.path;
                 fileName=obj.fileName;
                 size=obj.size;
-                Srv.store(clientId,fileName,path,size,md5,function(error,obj){
-                    if(error)
-                        return next(error);
 
-                    res.json(obj);
+                var busboy = new Busboy({ headers: req.headers });
+                busboy.on('file', function(fieldname, file, filename, encoding, mimetype) {
+                    //fileName=filename;
+                    //size=file.size;
+                    //var saveTo = Path.join(__dirname, ".."+path);
+                    //
+                    //if(!fs.existsSync(saveTo))
+                    //    fs.mkdirSync(saveTo);
+                    //
+                    //path += md5;
+                    //saveTo += md5;
+                    //
+                    //console.log(saveTo);
+                    //file.pipe(fs.createWriteStream(saveTo));
+                    file.resume();
                 });
+                busboy.on('finish', function() {
+                    Srv.store(clientId,fileName,path,size,md5,function(error,obj){
+                        if(error)
+                            return next(error);
+
+                        res.json(obj).end();
+                    });
+                });
+                req.pipe(busboy);
             }
         });
 
 
     });
-
     router.get("/attachments/:attachmentId",oauth,function(req,res,next){
 
         var id = req.params.attachmentId;
@@ -79,7 +96,6 @@ module.exports=function(router,oauth){
         });
 
     });
-
     router.delete("/attachments/:attachmentId",oauth,function(req,res,next){
 
         var id = req.params.attachmentId;
@@ -103,10 +119,92 @@ module.exports=function(router,oauth){
             if(!obj)
                 return next("文件不存在");
 
-            var filePath=Path.join(__dirname,".."+obj.path);
-            res.download(filePath);
+            try {
+                var filePath = Path.join(__dirname, ".." + obj.path);
+                fs.exists(filePath,function(exist){
+                    if(!exist)
+                        return res.json({message:"文件不存在"});
+                    else
+                        res.download(filePath, obj.fileName);
+                });
+            }
+            catch(e){
+                res.json({message:e});
+                console.log(e);
+            }
         });
     });
+    router.get("/attachments/:attachmentId/content/:fileName",oauth,function(req,res,next){
+
+        var id = req.params.attachmentId;
+        var clientId=req.oauth.bearerToken.clientId;
+        var clientTime=new Date(1900,1,1);
+        var filename=req.params.fileName;
+        Srv.get(clientId,id,clientTime,function(error,obj){
+            if(error)
+                return next(error);
+            if(!obj)
+                return next("文件不存在");
+
+            var filePath=Path.join(__dirname,".."+obj.path);
+            try {
+                fs.exists(filePath,function(exist){
+                    if(!exist)
+                        return res.json({message:"文件不存在"});
+                    else
+                        res.download(filePath, filename);
+                });
+            }
+            catch(e){
+                console.log(e);
+            }
+        });
+    });
+    router.get("/attachments/:attachmentId/:md5",function(req,res,next){
+
+        var ifModifiedSince = "If-Modified-Since".toLowerCase();
+        if (req.headers[ifModifiedSince]) {
+            res.writeHead(304, "Not Modified");
+            res.end();
+            return;
+        }
+
+        res.setHeader("Last-Modified", new Date().toUTCString());
+        var expires = new Date();
+        var maxAge=60*60*24*365;
+        expires.setTime(expires.getTime() +  maxAge* 1000);
+        res.setHeader("Expires", expires.toUTCString());
+        res.setHeader("Cache-Control", "max-age=" + maxAge);
+
+        var md5 = req.params.md5;
+        md5=md5.replace(".png","");
+        var id = req.params.attachmentId;
+        var clientId=null;
+        var clientTime=new Date(1900,1,1);
+        Srv.get(clientId,id,clientTime,function(error,obj){
+            if(error)
+                return next(error);
+            if(!obj)
+                return next("文件不存在");
+            if(obj.md5!=md5)
+                return next("没有权限");
+
+
+            try {
+                var filePath = Path.join(__dirname, ".." + obj.path);
+                fs.exists(filePath,function(exist){
+                    if(!exist)
+                        return res.json({message:"文件不存在"});
+                    else
+                        res.download(filePath, obj.fileName);
+                });
+            }
+            catch(e){
+                console.log(e);
+            }
+        });
+    });
+
 };
 
 

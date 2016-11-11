@@ -60,7 +60,9 @@ service.store=function(ownerId,id,clientId,obj,cb){
             if(error)
                 return cb(error);
 
-            obj=tobj.dataValues ||tobj;
+            if(!id)
+                obj=tobj.dataValues ||tobj;
+
 
             service.clear(obj);
             cb(null,obj);

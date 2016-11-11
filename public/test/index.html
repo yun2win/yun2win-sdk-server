@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body style="padding: 0; margin: 0;">
+    <div style="height: 50px; background: #c00; color:#fff; padding: 20px;">
+
+    </div>
+    <div id="u"></div>
+    <div id="btn"></div>
+
+    <script type="text/javascript" src="js/actionConnect.js" ></script>
+    <script type="text/javascript">
+
+        var host={
+            alert:function(msg,cb){
+                console.log(msg);
+            },
+            onMenuClick:function(data,cb){
+                console.log(data);
+                document.getElementById('btn').innerHTML=JSON.stringify(data);
+            }
+        };
+        var connect=new ActionConnect(host,top);
+        connect.ready(function(){
+
+            connect.changeTitle("是的,没错",function(error,obj){
+                console.log('back...success');
+            });
+            connect.changeToolbarColor("#cc0000","#aa0000","#ffffff",function(error,obj){
+                console.log('color back...success');
+            });
+            connect.setMenus([
+                {name:'发起聊天',type:'text',id:1},
+                {name:'发起聊天',type:'icon',id:1,iconSrc:'http://cn.agora.io/wp-content/themes/kyma-child/images/icon_search.png'},
+                {name:'发起聊天',type:'iconText',id:1,iconSrc:'http://cn.agora.io/wp-content/themes/kyma-child/images/logo/logo_langlang.jpg'}
+            ],function(error,obj){
+                console.log("set menus back");
+            });
+            connect.getCurrentUser(function(error,obj){
+                document.getElementById('u').innerHTML=JSON.stringify(obj);
+            });
+        });
+
+
+
+
+    </script>
+</body>
+</html>

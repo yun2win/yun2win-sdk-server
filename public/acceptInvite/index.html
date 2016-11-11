@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>邀请加入</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no">
+    <link rel="shortcut icon" href="images/logo.ico">
+    <link rel="stylesheet" href="css/base.css"/>
+    <link rel="stylesheet" href="css/index.css?v=1"/>
+</head>
+<body  >
+<div class="content">
+    <div class="wrapper radius8px" id="j-wrapper">
+        <div id="accept-panel">
+            <div class="index-logo"></div>
+            <form action="" method="post" class="m-register">
+                <div class="row tc">
+                    <input type="text" readonly class="radius5px box-sizing" id="email" autofocus="autofocus" autocomplete="off" placeholder="邮箱"  maxlength="50"/>
+                    <input type="text" readonly class="hide" id="key" autofocus="autofocus" autocomplete="off"    maxlength="50"/>
+                </div>
+                <div class="row tc">
+                    <input type="text" class="radius5px box-sizing" id="name" autocomplete="off" placeholder="昵称:限10位汉字、字母或者数字" maxlength="20"/>
+                </div>
+                <div class="row tc">
+                    <input type="password" class="radius5px box-sizing" id="password" autocomplete="off" placeholder="密码:6~20位字母或者数字" maxlength="20"/>
+                </div>
+                <div class="row">
+                    <div class="error-msg hide" id="errorMsg">此邮箱已存在</div>
+                </div>
+                <div class="row tc">
+                    <button type="button" class="btn btn-login" id="submit">同意邀请</button>
+                </div>
+            </form>
+        </div>
+        <div id="download-panel" class="hide">
+            <h1 id="success" class="hide">恭喜您成功加入</h1>
+            <p>请下载以下客户端登入:</p>
+
+            <div class="clients">
+                <a class="ap" href="../yun2win_v0.0.2.apk">
+                    <div class="client client-android"></div>
+                    <span>安卓版</span>
+                </a>
+                <a class="ap" href="../yun2win_v2_win.zip">
+                    <div class="client client-window"></div>
+                    <span>Windows版</span>
+                </a>
+                <a class="ap"  href="../yun2win_v2_mac.dmg">
+                    <div class="client client-ios"></div>
+                    <span>Mac版</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="footer" class="footer tc">
+    <p>Copyright &copy;2016</p>
+</div>
+    <script src="js/jquery-1.7.1.min.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/md5.js"></script>
+    <script src="js/index.js"></script>
+</body>
+</html>

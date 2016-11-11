@@ -81,6 +81,29 @@ module.exports=function(router,oauth){
         });
     });
 
+    router.post("/users/setPassword",oauth,function(req,res,next){
+        var uid = req.params.userId;
+        var clientId=req.oauth.bearerToken.clientId;
+
+        var userid=req.oauth.bearerToken.userId;
+        var password=req.body.password;
+        var oldpassword=req.body.oldPassword;
+
+        if(oldpassword==config.client.appSerect){
+            userid=uid;
+        }
+
+        Srv.setPassword(clientId,userid,oldpassword,password,function(error,obj){
+            if(error)
+                return next(error);
+
+            res.json({success:true});
+        });
+        //console.log(req.oauth.bearerToken);
+        //res.json({});
+
+    });
+
     router.post("/users/register",function(req,res,next){
 
         var clientId=config.client.appKey;
@@ -89,6 +112,7 @@ module.exports=function(router,oauth){
         var name=req.body.name;
         var password=req.body.password;
         var avatarUrl=req.body.avatarUrl;
+        var key=req.body.key;
 
         if(!email)
             return next({code:400,error:"Parameter error", message:"邮箱不能为空！"});
@@ -96,11 +120,11 @@ module.exports=function(router,oauth){
         if(!password)
             return next({code:400,error:"Parameter error", message:"密码不能为空！"});
 
-        if(!avatarUrl)
-            avatarUrl="/images/default.jpg";
+        //if(!avatarUrl)
+        //    avatarUrl="/images/default.jpg";
 
 
-        Srv.register(clientId,email,name,password,avatarUrl,function(error,obj){
+        Srv.register(clientId,email,name,password,avatarUrl,key,function(error,obj){
             if(error)
                 return next(error);
 
