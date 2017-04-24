@@ -3,10 +3,10 @@ var config=require("../config");
 var model = module.exports;
 
 
-var OAuthAccessTokensModel = require("../model/OAuthAccessToken"), // mongoose.model('OAuthAccessTokens'),
-    OAuthRefreshTokensModel = require("../model/OAuthRefreshToken"), // mongoose.model('OAuthRefreshTokens'),
+var OAuthAccessTokensModel = require("../model/oAuthAccessToken"), // mongoose.model('OAuthAccessTokens'),
+    OAuthRefreshTokensModel = require("../model/oAuthRefreshToken"), // mongoose.model('OAuthRefreshTokens'),
     OAuthClientsModel = require("../model/app"), // mongoose.model('OAuthClients'),
-    OauthAuthCodeModel = require("../model/OAuthAuthCode"),
+    OauthAuthCodeModel = require("../model/oAuthAuthCode"),
     OAuthUsersModel = require("../model/user"); // mongoose.model('OAuthUsers');
 
 //
