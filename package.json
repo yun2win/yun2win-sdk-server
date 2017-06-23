@@ -14,16 +14,16 @@
     "jade": "~1.9.2",
     "morgan": "~1.5.1",
     "serve-favicon": "~2.2.0",
-    "sequelize":"*",
-    "mysql":"*",
-    "thenjs":"*",
-    "oauth2-server":"*",
+    "sequelize":"~3.17.1",
+    "mysql":"~2.10.2",
+    "thenjs":"~2.0.2",
+    "oauth2-server":"~2.4.1",
     "nodemailer":"0.7.1",
     "formidable":"~1.0.5",
-    "busboy":"*",
-    "nano-id":"*",
-    "node-pinyin":"*",
-    "opencc":"*"
+    "busboy":"~0.2.12",
+    "nano-id":"~1.1.0",
+    "node-pinyin":"~node-pinyin",
+    "opencc":"~1.0.3"
   },
   "devDependencies":{
     "testful":"*"
