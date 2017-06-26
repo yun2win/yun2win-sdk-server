@@ -22,8 +22,7 @@
     "formidable":"~1.0.5",
     "busboy":"~0.2.12",
     "nano-id":"~1.1.0",
-    "node-pinyin":"~node-pinyin",
-    "opencc":"~1.0.3"
+    "node-pinyin":"~0.2.2"
   },
   "devDependencies":{
     "testful":"*"
